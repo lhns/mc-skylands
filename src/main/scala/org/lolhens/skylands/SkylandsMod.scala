@@ -17,7 +17,7 @@ class SkylandsMod {
 }
 
 object SkylandsMod {
-  val ModId = "skylandsmod"
+  final val ModId = "skylandsmod"
 
-  val Version = "0.0.0"
+  final val Version = "0.0.0"
 }
