@@ -1,4 +1,4 @@
-package org.lolhens.skylands
+package org.lolhens.skylands.world
 
 import net.minecraft.init.Blocks
 import net.minecraft.world.World
@@ -15,7 +15,7 @@ class SkylandsTerrainGenerator(world: World, random: Random) {
     for (
       cX <- 0 until 16;
       cZ <- 0 until 16;
-      cY <- 128 until 256
+      cY <- 0 to 64
     ) {
       primer.setBlockState(cX, cY, cZ, Blocks.STONE.getDefaultState)
     }

@@ -9,6 +9,7 @@ import net.minecraftforge.event.entity.player.EntityItemPickupEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.registry.GameRegistry
 import org.lolhens.skylands.blocks.BlockPortal
+import org.lolhens.skylands.world.WorldProviderSkylands
 
 /**
   * Created by pierr on 02.01.2017.

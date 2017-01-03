@@ -1,4 +1,4 @@
-package org.lolhens.skylands
+package org.lolhens.skylands.world
 
 import java.util
 
@@ -35,7 +35,8 @@ class ChunkProviderSkylands(worldObj: World) extends IChunkGenerator {
     val biomesForGeneration = worldObj.getBiomeProvider.getBiomesForGeneration(Array[Biome](), x * 16, z * 16, 16, 16)
 
     terrainGenerator.generate(x, z, chunkPrimer)
-    val chunk = new Chunk(worldObj, x, z)
+
+    val chunk = new Chunk(worldObj, chunkPrimer, x, z)
 
     val biomeArray = chunk.getBiomeArray
     for (i <- 0 until biomeArray.length)
