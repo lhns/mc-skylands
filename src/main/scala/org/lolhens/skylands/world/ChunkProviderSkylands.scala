@@ -52,7 +52,7 @@ class ChunkProviderSkylands(worldObj: World) extends IChunkGenerator {
     val j = z * 16
     val blockPos = new BlockPos(i, 0, j)
     val biome = worldObj.getBiome(blockPos.add(16, 0, 16))
-    biome.decorate(worldObj, random.self, blockPos)
+    //biome.decorate(worldObj, random.self, blockPos)
     WorldEntitySpawner.performWorldGenSpawning(worldObj, biome, i + 8, j + 8, 16, 16, random.self)
   }
 }
