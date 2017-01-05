@@ -17,7 +17,7 @@ import scala.util.Random
   * Created by pierr on 01.01.2017.
   */
 class ChunkProviderSkylands(world: World) extends IChunkGenerator {
-  private val random = new Random(world.getSeed)
+  private val random = new Random(world.getSeed + 0x4f9939f508L)
   private val mobs = List(new Biome.SpawnListEntry(classOf[EntityChicken], 100, 1, 4))
   private val terrainGenerator = new SkylandsTerrainGenerator(world, random)
 
