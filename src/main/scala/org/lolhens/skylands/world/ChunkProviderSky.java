@@ -8,7 +8,6 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Biomes;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.IProgressUpdate;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -19,7 +18,6 @@ import net.minecraft.world.gen.MapGenBase;
 import net.minecraft.world.gen.MapGenCaves;
 import net.minecraft.world.gen.NoiseGeneratorOctaves;
 import net.minecraft.world.gen.feature.*;
-import net.minecraftforge.common.BiomeManager;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -67,24 +65,20 @@ public class ChunkProviderSky implements IChunkGenerator {
         noise12 = new NoiseGeneratorOctaves(random, 8);
     }
 
-    public void generateStone(int chunkX, int chunkZ, ChunkPrimer primer, double[] temperature, double[] humidity) {
-        byte byte0 = 2;
-        int k = byte0 + 1;
-        byte byte1 = 33;
-        int l = byte0 + 1;
-        heightmapWIP = generateHeightmapWIP(heightmapWIP, chunkX * byte0, 0, chunkZ * byte0, k, byte1, l, temperature, humidity);
-        for (int i1 = 0; i1 < byte0; i1++) {
-            for (int j1 = 0; j1 < byte0; j1++) {
+    public void generateStone(int chunkX, int chunkZ, ChunkPrimer primer) {
+        heightmapWIP = generateHeightmapWIP(heightmapWIP, chunkX * 2, 0, chunkZ * 2, 3, 33, 3);
+        for (int i1 = 0; i1 < 2; i1++) {
+            for (int j1 = 0; j1 < 2; j1++) {
                 for (int k1 = 0; k1 < 32; k1++) {
                     double d = 0.25D;
-                    double d1 = heightmapWIP[((i1) * l + (j1)) * byte1 + (k1)];
-                    double d2 = heightmapWIP[((i1) * l + (j1 + 1)) * byte1 + (k1)];
-                    double d3 = heightmapWIP[((i1 + 1) * l + (j1)) * byte1 + (k1)];
-                    double d4 = heightmapWIP[((i1 + 1) * l + (j1 + 1)) * byte1 + (k1)];
-                    double d5 = (heightmapWIP[((i1) * l + (j1)) * byte1 + (k1 + 1)] - d1) * d;
-                    double d6 = (heightmapWIP[((i1) * l + (j1 + 1)) * byte1 + (k1 + 1)] - d2) * d;
-                    double d7 = (heightmapWIP[((i1 + 1) * l + (j1)) * byte1 + (k1 + 1)] - d3) * d;
-                    double d8 = (heightmapWIP[((i1 + 1) * l + (j1 + 1)) * byte1 + (k1 + 1)] - d4) * d;
+                    double d1 = heightmapWIP[((i1) * 3 + (j1)) * 33 + k1];
+                    double d2 = heightmapWIP[((i1) * 3 + (j1 + 1)) * 33 + k1];
+                    double d3 = heightmapWIP[((i1 + 1) * 3 + (j1)) * 33 + k1];
+                    double d4 = heightmapWIP[((i1 + 1) * 3 + (j1 + 1)) * 33 + k1];
+                    double d5 = (heightmapWIP[((i1) * 3 + (j1)) * 33 + (k1 + 1)] - d1) * d;
+                    double d6 = (heightmapWIP[((i1) * 3 + (j1 + 1)) * 33 + (k1 + 1)] - d2) * d;
+                    double d7 = (heightmapWIP[((i1 + 1) * 3 + (j1)) * 33 + (k1 + 1)] - d3) * d;
+                    double d8 = (heightmapWIP[((i1 + 1) * 3 + (j1 + 1)) * 33 + (k1 + 1)] - d4) * d;
                     for (int l1 = 0; l1 < 4; l1++) {
                         double d9 = 0.125D;
                         double d10 = d1;
@@ -92,10 +86,9 @@ public class ChunkProviderSky implements IChunkGenerator {
                         double d12 = (d3 - d1) * d9;
                         double d13 = (d4 - d2) * d9;
                         for (int i2 = 0; i2 < 8; i2++) {
-                            int x = (j1 * 8) << 7;
+                            int x = (j1 * 8);
                             int y = k1 * 4 + l1;
                             int z = (i2 + i1 * 8);
-                            int coordIndex = z << 11 | x << 7 | y;
                             double d14 = 0.125D;
                             double d15 = d10;
                             double d16 = (d11 - d10) * d14;
@@ -104,7 +97,8 @@ public class ChunkProviderSky implements IChunkGenerator {
                                 if (d15 > 0.0D) {
                                     blockState = Blocks.STONE.getDefaultState();
                                 }
-                                primer.setBlockState(x, y, z, blockState);
+                                primer.setBlockState(z, y, x, blockState);
+
                                 x++;
                                 d15 += d16;
                             }
@@ -176,20 +170,16 @@ public class ChunkProviderSky implements IChunkGenerator {
 
     }
 
-    public Chunk prepareChunk(int i, int j) {
-        return provideChunk(i, j);
-    }
-
     public Chunk provideChunk(int chunkX, int chunkZ) {
         random.setSeed((long) chunkX * 0x4f9939f508L + (long) chunkZ * 0x1ef1565bd5L);
         ChunkPrimer primer = new ChunkPrimer();
-        Chunk chunk = new Chunk(world, primer, chunkX, chunkZ);
-        biomes = world.getWorldChunkManager().loadBlockGeneratorData(biomes, chunkX * 16, chunkZ * 16, 16, 16);
-        double temperature[] = world.getWorldChunkManager().temperature;
-        double humidity[] = world.getWorldChunkManager().humidity;
-        generateStone(chunkX, chunkZ, primer, temperature, humidity);
+
+        biomes = world.getBiomeProvider().getBiomes(biomes, chunkX * 16, chunkZ * 16, 16, 16);
+        generateStone(chunkX, chunkZ, primer);
         generateTerrain(chunkX, chunkZ, primer, biomes);
         mapGenCaves.generate(world, chunkX, chunkZ, primer);
+
+        Chunk chunk = new Chunk(world, primer, chunkX, chunkZ);
         chunk.generateSkylightMap();
 
         return chunk;
@@ -216,48 +206,48 @@ public class ChunkProviderSky implements IChunkGenerator {
 
     }
 
-    private double[] generateHeightmapWIP(double heightmapWIP[], int i, int j, int k, int l, int i1, int j1, double[] temperature, double[] humidity) {
+    private double[] generateHeightmapWIP(double heightmapWIP[], int x, int y, int z, int sizeX, int sizeY, int sizeZ) {
         if (heightmapWIP == null) {
-            heightmapWIP = new double[l * i1 * j1];
+            heightmapWIP = new double[sizeX * sizeY * sizeZ];
         }
         double d = 684.41200000000003D;
         double d1 = 684.41200000000003D;
 
-        noise5 = noiseGen5.generateNoiseOctaves(noise5, i, k, l, j1, 1.121D, 1.121D, 0.5D);
-        noise6 = noiseGen6.generateNoiseOctaves(noise6, i, k, l, j1, 200D, 200D, 0.5D);
+        noise5 = noiseGen5.generateNoiseOctaves(noise5, x, z, sizeX, sizeZ, 1.121D, 1.121D, 0.5D);
+        noise6 = noiseGen6.generateNoiseOctaves(noise6, x, z, sizeX, sizeZ, 200D, 200D, 0.5D);
         d *= 2D;
-        noise1 = perlinNoise1.generateNoiseOctaves(noise1, i, j, k, l, i1, j1, d / 80D, d1 / 160D, d / 80D);
-        noisel1 = lperlinNoise1.generateNoiseOctaves(noisel1, i, j, k, l, i1, j1, d, d1, d);
-        noise2 = lperlinNoise2.generateNoiseOctaves(noise2, i, j, k, l, i1, j1, d, d1, d);
-        int k1 = 0;
-        for (int j2 = 0; j2 < l; j2++) {
-            for (int l2 = 0; l2 < j1; l2++) {
-                for (int j3 = 0; j3 < i1; j3++) {
-                    double d10 = noisel1[k1] / 512D;
-                    double d11 = noise2[k1] / 512D;
-                    double d12 = (noise1[k1] / 10D + 1.0D) / 2D;
+        noise1 = perlinNoise1.generateNoiseOctaves(noise1, x, y, z, sizeX, sizeY, sizeZ, d / 80D, d1 / 160D, d / 80D);
+        noisel1 = lperlinNoise1.generateNoiseOctaves(noisel1, x, y, z, sizeX, sizeY, sizeZ, d, d1, d);
+        noise2 = lperlinNoise2.generateNoiseOctaves(noise2, x, y, z, sizeX, sizeY, sizeZ, d, d1, d);
+        int index = 0;
+        for (int j2 = 0; j2 < sizeX; j2++) {
+            for (int l2 = 0; l2 < sizeZ; l2++) {
+                for (int j3 = 0; j3 < sizeY; j3++) {
+                    double d10 = noisel1[index] / 512D;
+                    double d11 = noise2[index] / 512D;
+                    double d12 = (noise1[index] / 10D + 1.0D) / 2D;
 
-                    double d8;
+                    double height;
                     if (d12 < 0.0D)
-                        d8 = d10;
+                        height = d10;
                     else if (d12 > 1.0D)
-                        d8 = d11;
+                        height = d11;
                     else
-                        d8 = d10 + (d11 - d10) * d12;
+                        height = d10 + (d11 - d10) * d12;
 
-                    d8 -= 8D;
+                    height -= 8D;
                     int k3 = 32;
-                    if (j3 > i1 - k3) {
-                        double d13 = (float) (j3 - (i1 - k3)) / ((float) k3 - 1.0F);
-                        d8 = d8 * (1.0D - d13) + -30D * d13;
+                    if (j3 > sizeY - k3) {
+                        double d13 = (float) (j3 - (sizeY - k3)) / ((float) k3 - 1.0F);
+                        height = height * (1.0D - d13) + -30D * d13;
                     }
                     k3 = 8;
                     if (j3 < k3) {
                         double d14 = (float) (k3 - j3) / ((float) k3 - 1.0F);
-                        d8 = d8 * (1.0D - d14) + -30D * d14;
+                        height = height * (1.0D - d14) + -30D * d14;
                     }
-                    heightmapWIP[k1] = d8;
-                    k1++;
+                    heightmapWIP[index] = height;
+                    index++;
                 }
 
             }
@@ -274,214 +264,201 @@ public class ChunkProviderSky implements IChunkGenerator {
     @Override
     public void populate(int chunkX, int chunkZ) {
         BlockSand.fallInstantly = true;
-        int k = chunkX * 16;
-        int l = chunkZ * 16;
-        Biome biomegenbase = world.getBiome(new BlockPos(k + 16, 0, l + 16));
+        int x = chunkX * 16;
+        int z = chunkZ * 16;
+        Biome biome = world.getBiome(new BlockPos(x + 16, 0, z + 16));
         random.setSeed(world.getSeed());
         long l1 = (random.nextLong() / 2L) * 2L + 1L;
         long l2 = (random.nextLong() / 2L) * 2L + 1L;
         random.setSeed((long) chunkX * l1 + (long) chunkZ * l2 ^ world.getSeed());
         double d = 0.25D;
         if (random.nextInt(4) == 0) {
-            int i1 = k + random.nextInt(16) + 8;
+            int i1 = x + random.nextInt(16) + 8;
             int l4 = random.nextInt(128);
-            int i8 = l + random.nextInt(16) + 8;
+            int i8 = z + random.nextInt(16) + 8;
             (new WorldGenLakes(Blocks.WATER)).generate(world, random, new BlockPos(i1, l4, i8));
         }
         if (random.nextInt(8) == 0) {
-            int j1 = k + random.nextInt(16) + 8;
+            int j1 = x + random.nextInt(16) + 8;
             int i5 = random.nextInt(random.nextInt(120) + 8);
-            int j8 = l + random.nextInt(16) + 8;
+            int j8 = z + random.nextInt(16) + 8;
             if (i5 < 64 || random.nextInt(10) == 0) {
                 (new WorldGenLakes(Blocks.LAVA)).generate(world, random, new BlockPos(j1, i5, j8));
             }
         }
         for (int k1 = 0; k1 < 8; k1++) {
-            int j5 = k + random.nextInt(16) + 8;
+            int j5 = x + random.nextInt(16) + 8;
             int k8 = random.nextInt(128);
-            int i13 = l + random.nextInt(16) + 8;
+            int i13 = z + random.nextInt(16) + 8;
             (new WorldGenDungeons()).generate(world, random, new BlockPos(j5, k8, i13));
         }
 
         for (int i2 = 0; i2 < 10; i2++) {
-            int k5 = k + random.nextInt(16);
+            int k5 = x + random.nextInt(16);
             int l8 = random.nextInt(128);
-            int j13 = l + random.nextInt(16);
+            int j13 = z + random.nextInt(16);
             (new WorldGenClay(32)).generate(world, random, new BlockPos(k5, l8, j13));
         }
 
         for (int j2 = 0; j2 < 20; j2++) {
-            int l5 = k + random.nextInt(16);
+            int l5 = x + random.nextInt(16);
             int i9 = random.nextInt(128);
-            int k13 = l + random.nextInt(16);
+            int k13 = z + random.nextInt(16);
             (new WorldGenMinable(Blocks.DIRT.getDefaultState(), 32)).generate(world, random, new BlockPos(l5, i9, k13));
         }
 
         for (int k2 = 0; k2 < 10; k2++) {
-            int i6 = k + random.nextInt(16);
+            int i6 = x + random.nextInt(16);
             int j9 = random.nextInt(128);
-            int l13 = l + random.nextInt(16);
+            int l13 = z + random.nextInt(16);
             (new WorldGenMinable(Blocks.GRAVEL.getDefaultState(), 32)).generate(world, random, new BlockPos(i6, j9, l13));
         }
 
         for (int i3 = 0; i3 < 20; i3++) {
-            int j6 = k + random.nextInt(16);
+            int j6 = x + random.nextInt(16);
             int k9 = random.nextInt(128);
-            int i14 = l + random.nextInt(16);
+            int i14 = z + random.nextInt(16);
             (new WorldGenMinable(Blocks.COAL_ORE.getDefaultState(), 16)).generate(world, random, new BlockPos(j6, k9, i14));
         }
 
         for (int j3 = 0; j3 < 20; j3++) {
-            int k6 = k + random.nextInt(16);
+            int k6 = x + random.nextInt(16);
             int l9 = random.nextInt(64);
-            int j14 = l + random.nextInt(16);
+            int j14 = z + random.nextInt(16);
             (new WorldGenMinable(Blocks.IRON_ORE.getDefaultState(), 8)).generate(world, random, new BlockPos(k6, l9, j14));
         }
 
         for (int k3 = 0; k3 < 2; k3++) {
-            int l6 = k + random.nextInt(16);
+            int l6 = x + random.nextInt(16);
             int i10 = random.nextInt(32);
-            int k14 = l + random.nextInt(16);
+            int k14 = z + random.nextInt(16);
             (new WorldGenMinable(Blocks.GOLD_ORE.getDefaultState(), 8)).generate(world, random, new BlockPos(l6, i10, k14));
         }
 
         for (int l3 = 0; l3 < 8; l3++) {
-            int i7 = k + random.nextInt(16);
+            int i7 = x + random.nextInt(16);
             int j10 = random.nextInt(16);
-            int l14 = l + random.nextInt(16);
+            int l14 = z + random.nextInt(16);
             (new WorldGenMinable(Blocks.REDSTONE_ORE.getDefaultState(), 7)).generate(world, random, new BlockPos(i7, j10, l14));
         }
 
         for (int i4 = 0; i4 < 1; i4++) {
-            int j7 = k + random.nextInt(16);
+            int j7 = x + random.nextInt(16);
             int k10 = random.nextInt(16);
-            int i15 = l + random.nextInt(16);
+            int i15 = z + random.nextInt(16);
             (new WorldGenMinable(Blocks.DIAMOND_ORE.getDefaultState(), 7)).generate(world, random, new BlockPos(j7, k10, i15));
         }
 
         for (int j4 = 0; j4 < 1; j4++) {
-            int k7 = k + random.nextInt(16);
+            int k7 = x + random.nextInt(16);
             int l10 = random.nextInt(16) + random.nextInt(16);
-            int j15 = l + random.nextInt(16);
+            int j15 = z + random.nextInt(16);
             (new WorldGenMinable(Blocks.LAPIS_ORE.getDefaultState(), 6)).generate(world, random, new BlockPos(k7, l10, j15));
         }
 
         d = 0.5D;
-        int k4 = (int) ((noise12.generateNoiseOctaves((double) k * d, (double) l * d) / 8D + random.nextDouble() * 4D + 4D) / 3D);
+        // noise12.func_806_a
+        int k4 = random.nextInt(8); //(int) ((noise12.generateNoiseOctaves((double) k * d, (double) l * d) / 8D + random.nextDouble() * 4D + 4D) / 3D);
 
         int numTrees = 0;
         if (random.nextInt(10) == 0) numTrees++;
-        if (biomegenbase == Biomes.FOREST) numTrees += k4 + 5;
+        if (biome == Biomes.FOREST) numTrees += k4 + 5;
         // rainforest
-        if (biomegenbase == Biomes.FOREST_HILLS) numTrees += k4 + 5;
+        if (biome == Biomes.FOREST_HILLS) numTrees += k4 + 5;
         // seasonalForest
-        if (biomegenbase == Biomes.BIRCH_FOREST) numTrees += k4 + 2;
-        if (biomegenbase == Biomes.TAIGA) numTrees += k4 + 5;
-        if (biomegenbase == Biomes.DESERT) numTrees -= 20;
+        if (biome == Biomes.BIRCH_FOREST) numTrees += k4 + 2;
+        if (biome == Biomes.TAIGA) numTrees += k4 + 5;
+        if (biome == Biomes.DESERT) numTrees -= 20;
         // tundra
-        if (biomegenbase == Biomes.COLD_TAIGA) numTrees -= 20;
-        if (biomegenbase == Biomes.PLAINS) numTrees -= 20;
+        if (biome == Biomes.COLD_TAIGA) numTrees -= 20;
+        if (biome == Biomes.PLAINS) numTrees -= 20;
         for (int i11 = 0; i11 < numTrees; i11++) {
-            int k15 = k + random.nextInt(16) + 8;
-            int j18 = l + random.nextInt(16) + 8;
-            WorldGenAbstractTree worldgenerator = biomegenbase.genBigTreeChance(random);
+            int k15 = x + random.nextInt(16) + 8;
+            int j18 = z + random.nextInt(16) + 8;
+            WorldGenAbstractTree worldgenerator = biome.genBigTreeChance(random);
             //worldgenerator.func_517_a(1.0D, 1.0D, 1.0D);
             worldgenerator.generate(world, random, new BlockPos(k15, world.getHeightmapHeight(k15, j18), j18));
         }
 
         for (int j11 = 0; j11 < 2; j11++) {
-            int l15 = k + random.nextInt(16) + 8;
+            int l15 = x + random.nextInt(16) + 8;
             int k18 = random.nextInt(128);
-            int i21 = l + random.nextInt(16) + 8;
+            int i21 = z + random.nextInt(16) + 8;
             (new WorldGenFlowers(Blocks.YELLOW_FLOWER, BlockFlower.EnumFlowerType.DANDELION)).generate(world, random, new BlockPos(l15, k18, i21));
         }
 
         if (random.nextInt(2) == 0) {
-            int x = k + random.nextInt(16) + 8;
-            int y = random.nextInt(128);
-            int z = l + random.nextInt(16) + 8;
-            (new WorldGenFlowers(Blocks.RED_FLOWER, BlockFlower.EnumFlowerType.POPPY)).generate(world, random, new BlockPos(x, y, z));
+            int x1 = x + random.nextInt(16) + 8;
+            int y1 = random.nextInt(128);
+            int z1 = z + random.nextInt(16) + 8;
+            (new WorldGenFlowers(Blocks.RED_FLOWER, BlockFlower.EnumFlowerType.POPPY)).generate(world, random, new BlockPos(x1, y1, z1));
         }
         if (random.nextInt(4) == 0) {
-            int l11 = k + random.nextInt(16) + 8;
+            int l11 = x + random.nextInt(16) + 8;
             int j16 = random.nextInt(128);
-            int i19 = l + random.nextInt(16) + 8;
+            int i19 = z + random.nextInt(16) + 8;
             (new WorldGenBush(Blocks.BROWN_MUSHROOM)).generate(world, random, new BlockPos(l11, j16, i19)); // brown mushroom
         }
         if (random.nextInt(8) == 0) {
-            int i12 = k + random.nextInt(16) + 8;
+            int i12 = x + random.nextInt(16) + 8;
             int k16 = random.nextInt(128);
-            int j19 = l + random.nextInt(16) + 8;
-            (new WorldGenFlowers(Blocks.RED_MUSHROOM, BlockFlower.EnumFlowerType.)).generate(world, random, i12, k16, j19);
+            int j19 = z + random.nextInt(16) + 8;
+            (new WorldGenBush(Blocks.RED_MUSHROOM)).generate(world, random, new BlockPos(i12, k16, j19));
         }
         for (int j12 = 0; j12 < 10; j12++) {
-            int l16 = k + random.nextInt(16) + 8;
+            int l16 = x + random.nextInt(16) + 8;
             int k19 = random.nextInt(128);
-            int j21 = l + random.nextInt(16) + 8;
+            int j21 = z + random.nextInt(16) + 8;
             (new WorldGenReed()).generate(world, random, new BlockPos(l16, k19, j21));
         }
 
         if (random.nextInt(32) == 0) {
-            int k12 = k + random.nextInt(16) + 8;
+            int k12 = x + random.nextInt(16) + 8;
             int i17 = random.nextInt(128);
-            int l19 = l + random.nextInt(16) + 8;
+            int l19 = z + random.nextInt(16) + 8;
             (new WorldGenPumpkin()).generate(world, random, new BlockPos(k12, i17, l19));
         }
         int l12 = 0;
-        if (biomegenbase == Biomes.DESERT) {
+        if (biome == Biomes.DESERT) {
             l12 += 10;
         }
         for (int j17 = 0; j17 < l12; j17++) {
-            int i20 = k + random.nextInt(16) + 8;
+            int i20 = x + random.nextInt(16) + 8;
             int k21 = random.nextInt(128);
-            int k22 = l + random.nextInt(16) + 8;
+            int k22 = z + random.nextInt(16) + 8;
             (new WorldGenCactus()).generate(world, random, new BlockPos(i20, k21, k22));
         }
 
         for (int k17 = 0; k17 < 50; k17++) {
-            int j20 = k + random.nextInt(16) + 8;
+            int j20 = x + random.nextInt(16) + 8;
             int l21 = random.nextInt(random.nextInt(120) + 8);
-            int l22 = l + random.nextInt(16) + 8;
+            int l22 = z + random.nextInt(16) + 8;
             (new WorldGenLiquids(Blocks.FLOWING_WATER)).generate(world, random, new BlockPos(j20, l21, l22));
         }
 
         for (int l17 = 0; l17 < 20; l17++) {
-            int k20 = k + random.nextInt(16) + 8;
+            int k20 = x + random.nextInt(16) + 8;
             int i22 = random.nextInt(random.nextInt(random.nextInt(112) + 8) + 8);
-            int i23 = l + random.nextInt(16) + 8;
+            int i23 = z + random.nextInt(16) + 8;
             (new WorldGenLiquids(Blocks.FLOWING_LAVA)).generate(world, random, new BlockPos(k20, i22, i23));
         }
 
-        temperature = world.getBiomeProvider().getTemperatures(temperature, k + 8, l + 8, 16, 16);
-        for (int x = k + 8; x < k + 8 + 16; x++) {
-            for (int z = l + 8; z < l + 8 + 16; z++) {
-                int j22 = x - (k + 8);
-                int j23 = z - (l + 8);
-                int y = world.getTopSolidOrLiquidBlock(new BlockPos(x, 0, z)).getY();
-                double d1 = temperature[j22 * 16 + j23] - ((double) (y - 64) / 64D) * 0.29999999999999999D;
-                if (d1 < 0.5D && y > 0 && y < 128 && world.isAirBlock(new BlockPos(x, y, z)) && world.getBlockState(new BlockPos(x, y - 1, z)).getMaterial().isSolid() && world.getBlockState(new BlockPos(x, y - 1, z)).getMaterial() != Material.ICE) {
-                    world.setBlockState(new BlockPos(x, y, z), Blocks.SNOW.getDefaultState());
+        //temperature = world.getBiomeProvider().getTemperatures(temperature, x + 8, z + 8, 16, 16);
+
+        for (int x2 = 0; x2 < 16; x2++) {
+            for (int z2 = 0; z2 < 16; z2++) {
+                int y1 = world.getTopSolidOrLiquidBlock(new BlockPos(x2 + x + 8, 0, z2 + x + 8)).getY();
+                double temp = biome.getTemperature();//temperature[x2 * 16 + z2] - ((double) (y1 - 64) / 64D) * 0.29999999999999999D;
+                if (temp < 0.5D && y1 > 0 && y1 < 128 &&
+                        world.isAirBlock(new BlockPos(x2 + x + 8, y1, z2 + x + 8)) &&
+                        world.getBlockState(new BlockPos(x2 + x + 8, y1 - 1, z2 + x + 8)).getMaterial().isSolid() &&
+                        world.getBlockState(new BlockPos(x2 + x + 8, y1 - 1, z2 + x + 8)).getMaterial() != Material.ICE) {
+                    world.setBlockState(new BlockPos(x2 + x + 8, y1, z2 + x + 8), Blocks.SNOW.getDefaultState());
                 }
             }
 
         }
 
         BlockSand.fallInstantly = false;
-    }
-
-    public boolean saveChunks(boolean flag, IProgressUpdate iprogressupdate) {
-        return true;
-    }
-
-    public boolean unload100OldestChunks() {
-        return false;
-    }
-
-    public boolean canSave() {
-        return true;
-    }
-
-    public String makeString() {
-        return "RandomLevelSource";
     }
 }

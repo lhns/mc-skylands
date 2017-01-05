@@ -24,7 +24,7 @@ class WorldProviderSkylands extends WorldProvider {
 
   //override def getFogColor(p_76562_1_ : Float, p_76562_2_ : Float): Vec3d = new Vec3d(1, 1, 1)
 
-  override def getCloudHeight: Float = 0
+  override def getCloudHeight: Float = 20
 
   //override def isDaytime: Boolean = true
 }
