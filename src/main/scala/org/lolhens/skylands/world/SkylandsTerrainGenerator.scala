@@ -1,23 +1,17 @@
 package org.lolhens.skylands.world
 
-import net.minecraft.init.Blocks
 import net.minecraft.world.World
 import net.minecraft.world.chunk.ChunkPrimer
 
 import scala.util.Random
 
 /**
-  * Created by pierr on 01.01.2017.
+  * Created by pierr on 05.01.2017.
   */
-class SkylandsTerrainGenerator(world: World, random: Random) {
+class SkylandsTerrainGenerator(world: World, random: Random) extends TerrainGenerator(world, random) {
+  val chunkProviderSky = new ChunkProviderSky(world, random.self)
 
-  def generate(x: Int, z: Int, primer: ChunkPrimer): Unit = {
-    for (
-      cX <- 0 until 16;
-      cZ <- 0 until 16;
-      cY <- 0 to 64
-    ) {
-      primer.setBlockState(cX, cY, cZ, Blocks.STONE.getDefaultState)
-    }
-  }
+  override def generate(chunkX: Int, chunkZ: Int, primer: ChunkPrimer): Unit = chunkProviderSky.provideChunk(chunkX, chunkZ, primer)
+
+  override def populate(chunkX: Int, chunkZ: Int): Unit = chunkProviderSky.populate(chunkX, chunkZ)
 }

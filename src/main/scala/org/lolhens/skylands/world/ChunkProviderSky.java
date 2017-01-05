@@ -5,7 +5,6 @@ import net.minecraft.block.BlockFlower;
 import net.minecraft.block.BlockSand;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Biomes;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
@@ -13,17 +12,15 @@ import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkPrimer;
-import net.minecraft.world.chunk.IChunkGenerator;
 import net.minecraft.world.gen.MapGenBase;
 import net.minecraft.world.gen.MapGenCaves;
 import net.minecraft.world.gen.NoiseGeneratorOctaves;
+import net.minecraft.world.gen.NoiseGeneratorPerlin;
 import net.minecraft.world.gen.feature.*;
 
-import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Random;
 
-public class ChunkProviderSky implements IChunkGenerator {
+public class ChunkProviderSky {
     private Random random;
     private NoiseGeneratorOctaves lperlinNoise1;
     private NoiseGeneratorOctaves lperlinNoise2;
@@ -32,29 +29,26 @@ public class ChunkProviderSky implements IChunkGenerator {
     private NoiseGeneratorOctaves noise11;
     public NoiseGeneratorOctaves noiseGen5;
     public NoiseGeneratorOctaves noiseGen6;
-    public NoiseGeneratorOctaves noise12;
+    public NoiseGeneratorPerlin noise12;
     private World world;
-    private double heightmapWIP[];
+    private double noiseArray[];
     private double pnr[];
     private double ar[];
     private double br[];
     private MapGenBase mapGenCaves = new MapGenCaves();
     private Biome[] biomes;
-    double noise1[];
-    double noisel1[];
-    double noise2[];
-    double noise5[];
-    double noise6[];
-    int field_28088_i[][];
-    private double temperature[];
+    private double noise1[];
+    private double noisel1[];
+    private double noise2[];
+    private double noise5[];
+    private double noise6[];
 
-    public ChunkProviderSky(World world) {
+    public ChunkProviderSky(World world, Random random) {
         pnr = new double[256];
         ar = new double[256];
         br = new double[256];
-        field_28088_i = new int[32][32];
         this.world = world;
-        random = new Random(world.getSeed());
+        this.random = random;
         lperlinNoise1 = new NoiseGeneratorOctaves(random, 16);
         lperlinNoise2 = new NoiseGeneratorOctaves(random, 16);
         perlinNoise1 = new NoiseGeneratorOctaves(random, 8);
@@ -62,23 +56,23 @@ public class ChunkProviderSky implements IChunkGenerator {
         noise11 = new NoiseGeneratorOctaves(random, 4);
         noiseGen5 = new NoiseGeneratorOctaves(random, 10);
         noiseGen6 = new NoiseGeneratorOctaves(random, 16);
-        noise12 = new NoiseGeneratorOctaves(random, 8);
+        noise12 = new NoiseGeneratorPerlin(random, 8);
     }
 
-    public void generateStone(int chunkX, int chunkZ, ChunkPrimer primer) {
-        heightmapWIP = generateHeightmapWIP(heightmapWIP, chunkX * 2, 0, chunkZ * 2, 3, 33, 3);
+    private void generateStone(int chunkX, int chunkZ, ChunkPrimer primer) {
+        noiseArray = getNoiseArray(noiseArray, chunkX * 2, 0, chunkZ * 2, 3, 33, 3);
         for (int i1 = 0; i1 < 2; i1++) {
             for (int j1 = 0; j1 < 2; j1++) {
                 for (int k1 = 0; k1 < 32; k1++) {
                     double d = 0.25D;
-                    double d1 = heightmapWIP[((i1) * 3 + (j1)) * 33 + k1];
-                    double d2 = heightmapWIP[((i1) * 3 + (j1 + 1)) * 33 + k1];
-                    double d3 = heightmapWIP[((i1 + 1) * 3 + (j1)) * 33 + k1];
-                    double d4 = heightmapWIP[((i1 + 1) * 3 + (j1 + 1)) * 33 + k1];
-                    double d5 = (heightmapWIP[((i1) * 3 + (j1)) * 33 + (k1 + 1)] - d1) * d;
-                    double d6 = (heightmapWIP[((i1) * 3 + (j1 + 1)) * 33 + (k1 + 1)] - d2) * d;
-                    double d7 = (heightmapWIP[((i1 + 1) * 3 + (j1)) * 33 + (k1 + 1)] - d3) * d;
-                    double d8 = (heightmapWIP[((i1 + 1) * 3 + (j1 + 1)) * 33 + (k1 + 1)] - d4) * d;
+                    double d1 = noiseArray[((i1) * 3 + (j1)) * 33 + k1];
+                    double d2 = noiseArray[((i1) * 3 + (j1 + 1)) * 33 + k1];
+                    double d3 = noiseArray[((i1 + 1) * 3 + (j1)) * 33 + k1];
+                    double d4 = noiseArray[((i1 + 1) * 3 + (j1 + 1)) * 33 + k1];
+                    double d5 = (noiseArray[((i1) * 3 + (j1)) * 33 + (k1 + 1)] - d1) * d;
+                    double d6 = (noiseArray[((i1) * 3 + (j1 + 1)) * 33 + (k1 + 1)] - d2) * d;
+                    double d7 = (noiseArray[((i1 + 1) * 3 + (j1)) * 33 + (k1 + 1)] - d3) * d;
+                    double d8 = (noiseArray[((i1 + 1) * 3 + (j1 + 1)) * 33 + (k1 + 1)] - d4) * d;
                     for (int l1 = 0; l1 < 4; l1++) {
                         double d9 = 0.125D;
                         double d10 = d1;
@@ -121,7 +115,7 @@ public class ChunkProviderSky implements IChunkGenerator {
 
     }
 
-    public void generateTerrain(int xChunk, int zChunk, ChunkPrimer primer, Biome biomes[]) {
+    private void replaceBiomeBlocks(int xChunk, int zChunk, ChunkPrimer primer, Biome biomes[]) {
         double d = 0.03125D;
         pnr = noise10.generateNoiseOctaves(pnr, xChunk * 16, zChunk * 16, 0, 16, 16, 1, d, d, 1.0D);
         ar = noise10.generateNoiseOctaves(ar, xChunk * 16, 109 /*109.0134D*/, zChunk * 16, 16, 1, 16, d, 1.0D, d);
@@ -170,45 +164,16 @@ public class ChunkProviderSky implements IChunkGenerator {
 
     }
 
-    public Chunk provideChunk(int chunkX, int chunkZ) {
-        random.setSeed((long) chunkX * 0x4f9939f508L + (long) chunkZ * 0x1ef1565bd5L);
-        ChunkPrimer primer = new ChunkPrimer();
-
+    public void provideChunk(int chunkX, int chunkZ, ChunkPrimer primer) {
         biomes = world.getBiomeProvider().getBiomes(biomes, chunkX * 16, chunkZ * 16, 16, 16);
         generateStone(chunkX, chunkZ, primer);
-        generateTerrain(chunkX, chunkZ, primer, biomes);
+        replaceBiomeBlocks(chunkX, chunkZ, primer, biomes);
         mapGenCaves.generate(world, chunkX, chunkZ, primer);
-
-        Chunk chunk = new Chunk(world, primer, chunkX, chunkZ);
-        chunk.generateSkylightMap();
-
-        return chunk;
     }
 
-    @Override
-    public boolean generateStructures(Chunk chunkIn, int x, int z) {
-        return false;
-    }
-
-    @Override
-    public List<Biome.SpawnListEntry> getPossibleCreatures(EnumCreatureType creatureType, BlockPos pos) {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public BlockPos getStrongholdGen(World worldIn, String structureName, BlockPos position) {
-        return null;
-    }
-
-    @Override
-    public void recreateStructures(Chunk chunkIn, int x, int z) {
-
-    }
-
-    private double[] generateHeightmapWIP(double heightmapWIP[], int x, int y, int z, int sizeX, int sizeY, int sizeZ) {
-        if (heightmapWIP == null) {
-            heightmapWIP = new double[sizeX * sizeY * sizeZ];
+    private double[] getNoiseArray(double noiseArray[], int x, int y, int z, int sizeX, int sizeY, int sizeZ) {
+        if (noiseArray == null) {
+            noiseArray = new double[sizeX * sizeY * sizeZ];
         }
         double d = 684.41200000000003D;
         double d1 = 684.41200000000003D;
@@ -227,26 +192,26 @@ public class ChunkProviderSky implements IChunkGenerator {
                     double d11 = noise2[index] / 512D;
                     double d12 = (noise1[index] / 10D + 1.0D) / 2D;
 
-                    double height;
+                    double noise;
                     if (d12 < 0.0D)
-                        height = d10;
+                        noise = d10;
                     else if (d12 > 1.0D)
-                        height = d11;
+                        noise = d11;
                     else
-                        height = d10 + (d11 - d10) * d12;
+                        noise = d10 + (d11 - d10) * d12;
 
-                    height -= 8D;
+                    noise -= 8D;
                     int k3 = 32;
                     if (j3 > sizeY - k3) {
                         double d13 = (float) (j3 - (sizeY - k3)) / ((float) k3 - 1.0F);
-                        height = height * (1.0D - d13) + -30D * d13;
+                        noise = noise * (1.0D - d13) + -30D * d13;
                     }
                     k3 = 8;
                     if (j3 < k3) {
                         double d14 = (float) (k3 - j3) / ((float) k3 - 1.0F);
-                        height = height * (1.0D - d14) + -30D * d14;
+                        noise = noise * (1.0D - d14) + -30D * d14;
                     }
-                    heightmapWIP[index] = height;
+                    noiseArray[index] = noise;
                     index++;
                 }
 
@@ -254,14 +219,9 @@ public class ChunkProviderSky implements IChunkGenerator {
 
         }
 
-        return heightmapWIP;
+        return noiseArray;
     }
 
-    public boolean chunkExists(int i, int j) {
-        return true;
-    }
-
-    @Override
     public void populate(int chunkX, int chunkZ) {
         BlockSand.fallInstantly = true;
         int x = chunkX * 16;
@@ -357,8 +317,7 @@ public class ChunkProviderSky implements IChunkGenerator {
         }
 
         d = 0.5D;
-        // noise12.func_806_a
-        int k4 = random.nextInt(8); //(int) ((noise12.generateNoiseOctaves((double) k * d, (double) l * d) / 8D + random.nextDouble() * 4D + 4D) / 3D);
+        int k4 = (int) ((noise12.getValue((double) x * d, (double) z * d) / 8D + random.nextDouble() * 4D + 4D) / 3D);
 
         int numTrees = 0;
         if (random.nextInt(10) == 0) numTrees++;
@@ -376,7 +335,6 @@ public class ChunkProviderSky implements IChunkGenerator {
             int k15 = x + random.nextInt(16) + 8;
             int j18 = z + random.nextInt(16) + 8;
             WorldGenAbstractTree worldgenerator = biome.genBigTreeChance(random);
-            //worldgenerator.func_517_a(1.0D, 1.0D, 1.0D);
             worldgenerator.generate(world, random, new BlockPos(k15, world.getHeightmapHeight(k15, j18), j18));
         }
 
@@ -397,7 +355,7 @@ public class ChunkProviderSky implements IChunkGenerator {
             int l11 = x + random.nextInt(16) + 8;
             int j16 = random.nextInt(128);
             int i19 = z + random.nextInt(16) + 8;
-            (new WorldGenBush(Blocks.BROWN_MUSHROOM)).generate(world, random, new BlockPos(l11, j16, i19)); // brown mushroom
+            (new WorldGenBush(Blocks.BROWN_MUSHROOM)).generate(world, random, new BlockPos(l11, j16, i19));
         }
         if (random.nextInt(8) == 0) {
             int i12 = x + random.nextInt(16) + 8;
@@ -443,12 +401,10 @@ public class ChunkProviderSky implements IChunkGenerator {
             (new WorldGenLiquids(Blocks.FLOWING_LAVA)).generate(world, random, new BlockPos(k20, i22, i23));
         }
 
-        //temperature = world.getBiomeProvider().getTemperatures(temperature, x + 8, z + 8, 16, 16);
-
         for (int x2 = 0; x2 < 16; x2++) {
             for (int z2 = 0; z2 < 16; z2++) {
                 int y1 = world.getTopSolidOrLiquidBlock(new BlockPos(x2 + x + 8, 0, z2 + x + 8)).getY();
-                double temp = biome.getTemperature();//temperature[x2 * 16 + z2] - ((double) (y1 - 64) / 64D) * 0.29999999999999999D;
+                double temp = biome.getTemperature() - ((double) (y1 - 64) / 64D) * 0.29999999999999999D;
                 if (temp < 0.5D && y1 > 0 && y1 < 128 &&
                         world.isAirBlock(new BlockPos(x2 + x + 8, y1, z2 + x + 8)) &&
                         world.getBlockState(new BlockPos(x2 + x + 8, y1 - 1, z2 + x + 8)).getMaterial().isSolid() &&
