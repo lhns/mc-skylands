@@ -28,7 +28,6 @@ public class ChunkProviderSky {
     private NoiseGeneratorOctaves noise11;
     public NoiseGeneratorPerlin noise12;
     private World world;
-    private double noiseArray[];
     private double pnr[] = new double[256];
     private double ar[] = new double[256];
     private double br[] = new double[256];
@@ -39,14 +38,14 @@ public class ChunkProviderSky {
         this.random = random;
         lperlinNoise1 = new NoiseGeneratorOctaves(random, 16);
         lperlinNoise2 = new NoiseGeneratorOctaves(random, 16);
-        perlinNoise1 = new NoiseGeneratorOctaves(random, 8);
-        noise10 = new NoiseGeneratorOctaves(random, 4);
-        noise11 = new NoiseGeneratorOctaves(random, 4);
-        noise12 = new NoiseGeneratorPerlin(random, 8);
+        perlinNoise1  = new NoiseGeneratorOctaves(random, 8);
+        noise10       = new NoiseGeneratorOctaves(random, 4);
+        noise11       = new NoiseGeneratorOctaves(random, 4);
+        noise12       = new NoiseGeneratorPerlin(random, 8);
     }
 
     private void generateStone(int chunkX, int chunkZ, ChunkPrimer primer) {
-        noiseArray = getNoiseArray(noiseArray, chunkX * 2, 0, chunkZ * 2, 3, 33, 3);
+        double[] noiseArray = getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3);
         for (int i1 = 0; i1 < 2; i1++) {
             for (int j1 = 0; j1 < 2; j1++) {
                 for (int k1 = 0; k1 < 32; k1++) {
@@ -157,10 +156,8 @@ public class ChunkProviderSky {
         mapGenCaves.generate(world, chunkX, chunkZ, primer);
     }
 
-    private double[] getNoiseArray(double noiseArray[], int x, int y, int z, int sizeX, int sizeY, int sizeZ) {
-        if (noiseArray == null) {
-            noiseArray = new double[sizeX * sizeY * sizeZ];
-        }
+    private double[] getNoiseArray(int x, int y, int z, int sizeX, int sizeY, int sizeZ) {
+        double[] noiseArray = new double[sizeX * sizeY * sizeZ];
         double d = 684.41200000000003D;
         double d1 = 684.41200000000003D;
 
