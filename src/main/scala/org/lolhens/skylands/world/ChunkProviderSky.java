@@ -10,7 +10,6 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
-import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.gen.MapGenBase;
 import net.minecraft.world.gen.MapGenCaves;
@@ -27,26 +26,15 @@ public class ChunkProviderSky {
     private NoiseGeneratorOctaves perlinNoise1;
     private NoiseGeneratorOctaves noise10;
     private NoiseGeneratorOctaves noise11;
-    public NoiseGeneratorOctaves noiseGen5;
-    public NoiseGeneratorOctaves noiseGen6;
     public NoiseGeneratorPerlin noise12;
     private World world;
     private double noiseArray[];
-    private double pnr[];
-    private double ar[];
-    private double br[];
+    private double pnr[] = new double[256];
+    private double ar[] = new double[256];
+    private double br[] = new double[256];
     private MapGenBase mapGenCaves = new MapGenCaves();
-    private Biome[] biomes;
-    private double noise1[];
-    private double noisel1[];
-    private double noise2[];
-    private double noise5[];
-    private double noise6[];
 
     public ChunkProviderSky(World world, Random random) {
-        pnr = new double[256];
-        ar = new double[256];
-        br = new double[256];
         this.world = world;
         this.random = random;
         lperlinNoise1 = new NoiseGeneratorOctaves(random, 16);
@@ -54,8 +42,6 @@ public class ChunkProviderSky {
         perlinNoise1 = new NoiseGeneratorOctaves(random, 8);
         noise10 = new NoiseGeneratorOctaves(random, 4);
         noise11 = new NoiseGeneratorOctaves(random, 4);
-        noiseGen5 = new NoiseGeneratorOctaves(random, 10);
-        noiseGen6 = new NoiseGeneratorOctaves(random, 16);
         noise12 = new NoiseGeneratorPerlin(random, 8);
     }
 
@@ -165,7 +151,7 @@ public class ChunkProviderSky {
     }
 
     public void provideChunk(int chunkX, int chunkZ, ChunkPrimer primer) {
-        biomes = world.getBiomeProvider().getBiomes(biomes, chunkX * 16, chunkZ * 16, 16, 16);
+        Biome[] biomes = world.getBiomeProvider().getBiomes(new Biome[0], chunkX * 16, chunkZ * 16, 16, 16);
         generateStone(chunkX, chunkZ, primer);
         replaceBiomeBlocks(chunkX, chunkZ, primer, biomes);
         mapGenCaves.generate(world, chunkX, chunkZ, primer);
@@ -178,12 +164,10 @@ public class ChunkProviderSky {
         double d = 684.41200000000003D;
         double d1 = 684.41200000000003D;
 
-        noise5 = noiseGen5.generateNoiseOctaves(noise5, x, z, sizeX, sizeZ, 1.121D, 1.121D, 0.5D);
-        noise6 = noiseGen6.generateNoiseOctaves(noise6, x, z, sizeX, sizeZ, 200D, 200D, 0.5D);
         d *= 2D;
-        noise1 = perlinNoise1.generateNoiseOctaves(noise1, x, y, z, sizeX, sizeY, sizeZ, d / 80D, d1 / 160D, d / 80D);
-        noisel1 = lperlinNoise1.generateNoiseOctaves(noisel1, x, y, z, sizeX, sizeY, sizeZ, d, d1, d);
-        noise2 = lperlinNoise2.generateNoiseOctaves(noise2, x, y, z, sizeX, sizeY, sizeZ, d, d1, d);
+        double[] noise1 = perlinNoise1.generateNoiseOctaves(null, x, y, z, sizeX, sizeY, sizeZ, d / 80D, d1 / 160D, d / 80D);
+        double[] noisel1 = lperlinNoise1.generateNoiseOctaves(null, x, y, z, sizeX, sizeY, sizeZ, d, d1, d);
+        double[] noise2 = lperlinNoise2.generateNoiseOctaves(null, x, y, z, sizeX, sizeY, sizeZ, d, d1, d);
         int index = 0;
         for (int j2 = 0; j2 < sizeX; j2++) {
             for (int l2 = 0; l2 < sizeZ; l2++) {
@@ -403,13 +387,14 @@ public class ChunkProviderSky {
 
         for (int x2 = 0; x2 < 16; x2++) {
             for (int z2 = 0; z2 < 16; z2++) {
-                int y1 = world.getTopSolidOrLiquidBlock(new BlockPos(x2 + x + 8, 0, z2 + x + 8)).getY();
-                double temp = biome.getTemperature() - ((double) (y1 - 64) / 64D) * 0.29999999999999999D;
-                if (temp < 0.5D && y1 > 0 && y1 < 128 &&
-                        world.isAirBlock(new BlockPos(x2 + x + 8, y1, z2 + x + 8)) &&
-                        world.getBlockState(new BlockPos(x2 + x + 8, y1 - 1, z2 + x + 8)).getMaterial().isSolid() &&
-                        world.getBlockState(new BlockPos(x2 + x + 8, y1 - 1, z2 + x + 8)).getMaterial() != Material.ICE) {
-                    world.setBlockState(new BlockPos(x2 + x + 8, y1, z2 + x + 8), Blocks.SNOW.getDefaultState());
+                int y1 = world.getTopSolidOrLiquidBlock(new BlockPos(x2 + x + 8, 0, z2 + z + 8)).getY();
+                BlockPos snowPos = new BlockPos(x2 + x + 8, y1, z2 + z + 8);
+                double temp = biome.getFloatTemperature(snowPos) - ((double) (y1 - 64) / 64D) * 0.29999999999999999D;
+                if (world.canSnowAt(snowPos, true) && y1 > 0 && y1 < 128 &&
+                        world.isAirBlock(snowPos) &&
+                        world.getBlockState(snowPos.add(0, -1, 0)).getMaterial().isSolid() &&
+                        world.getBlockState(snowPos.add(0, -1, 0)).getMaterial() != Material.ICE) {
+                    world.setBlockState(snowPos, Blocks.SNOW_LAYER.getDefaultState());
                 }
             }
 
