@@ -9,7 +9,7 @@ import scala.util.Random
   * Created by pierr on 05.01.2017.
   */
 class SkylandsTerrainGenerator(world: World, random: Random) extends TerrainGenerator(world, random) {
-  val chunkProviderSky = new ChunkProviderSky(world, random.self)
+  val chunkProviderSky = new ScalaChunkProviderSky(world, random.self)
 
   override def generate(chunkX: Int, chunkZ: Int, primer: ChunkPrimer): Unit = chunkProviderSky.provideChunk(chunkX, chunkZ, primer)
 

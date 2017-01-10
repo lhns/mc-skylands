@@ -24,7 +24,6 @@ public class ChunkProviderSky {
     private NoiseGeneratorOctaves lperlinNoise1;
     private NoiseGeneratorOctaves lperlinNoise2;
     private NoiseGeneratorOctaves perlinNoise1;
-    private NoiseGeneratorOctaves noise10;
     private NoiseGeneratorOctaves noise11;
     public NoiseGeneratorPerlin noise12;
     private World world;
@@ -36,7 +35,6 @@ public class ChunkProviderSky {
         lperlinNoise1 = new NoiseGeneratorOctaves(random, 16);
         lperlinNoise2 = new NoiseGeneratorOctaves(random, 16);
         perlinNoise1 = new NoiseGeneratorOctaves(random, 8);
-        noise10 = new NoiseGeneratorOctaves(random, 4);
         noise11 = new NoiseGeneratorOctaves(random, 4);
         noise12 = new NoiseGeneratorPerlin(random, 8);
     }
@@ -151,7 +149,7 @@ public class ChunkProviderSky {
         mapGenCaves.generate(world, chunkX, chunkZ, primer);
     }
 
-    private double[] getNoiseArray(int x, int y, int z, int sizeX, int sizeY, int sizeZ) {
+    double[] getNoiseArray(int x, int y, int z, int sizeX, int sizeY, int sizeZ) {
         double[] noiseArray = new double[sizeX * sizeY * sizeZ];
         double d = 684.41200000000003D;
         double d1 = 684.41200000000003D;

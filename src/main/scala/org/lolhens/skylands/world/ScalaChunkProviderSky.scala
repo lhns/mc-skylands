@@ -16,20 +16,19 @@ import scala.util.Random
   * Created by pierr on 09.01.2017.
   */
 class ScalaChunkProviderSky(world: World, random: Random) {
-  private val noise10 = new NoiseGeneratorOctaves(random.self, 4)
   private val noise11 = new NoiseGeneratorOctaves(random.self, 4)
   private val noise12 = new NoiseGeneratorPerlin(random.self, 8)
-  private val noiseArray = null
   private val mapGenCaves = new MapGenCaves()
-
 
   private val lperlinNoise1 = new NoiseGeneratorOctaves(random.self, 16)
   private val lperlinNoise2 = new NoiseGeneratorOctaves(random.self, 16)
   private val perlinNoise1 = new NoiseGeneratorOctaves(random.self, 8)
 
-  private def getNoiseArray(xOffset: Int, yOffset: Int, zOffset: Int, xSize: Int, ySize: Int, zSize: Int): Array[Double] = {
+  val self = new ChunkProviderSky(world, random.self)
+
+  def getNoiseArray(xOffset: Int, yOffset: Int, zOffset: Int, xSize: Int, ySize: Int, zSize: Int): Array[Double] = {
     val noiseArray = new Array[Double](xSize * ySize * zSize)
-    val d: Double = 684.41200000000003D * 2
+    val d: Double = 684.41200000000003D * 2D
     val d1: Double = 684.41200000000003D
 
     val noise1: Array[Double] = perlinNoise1.generateNoiseOctaves(null, xOffset, yOffset, zOffset, xSize, ySize, zSize, d / 80D, d1 / 160D, d / 80D)
@@ -69,7 +68,8 @@ class ScalaChunkProviderSky(world: World, random: Random) {
   }
 
   def generateStone(chunkX: Int, chunkZ: Int, primer: ChunkPrimer): Unit = {
-    val noiseArray: Array[Double] = getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3)
+    val noiseArray: Array[Double] = /*self.getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3)*/getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3)
+    println(s"${noiseArray(20)} ?= ${self.getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3).apply(20)}")
     for (i1 <- 0 until 2;
          j1 <- 0 until 2;
          k1 <- 0 until 32) {
@@ -186,70 +186,70 @@ class ScalaChunkProviderSky(world: World, random: Random) {
         new WorldGenLakes(Blocks.LAVA).generate(world, random.self, new BlockPos(j1, i5, j8))
       }
     }
-    for (k1 <- 0 until 8) {
+    for (_ <- 0 until 8) {
       val j5 = x + random.nextInt(16) + 8
       val k8 = random.nextInt(128)
       val i13 = z + random.nextInt(16) + 8
       new WorldGenDungeons().generate(world, random.self, new BlockPos(j5, k8, i13))
     }
 
-    for (i2 <- 0 until 10) {
+    for (_ <- 0 until 10) {
       val k5 = x + random.nextInt(16)
       val l8 = random.nextInt(128)
       val j13 = z + random.nextInt(16)
       new WorldGenClay(32).generate(world, random.self, new BlockPos(k5, l8, j13))
     }
 
-    for (j2 <- 0 until 20) {
+    for (_ <- 0 until 20) {
       val l5 = x + random.nextInt(16)
       val i9 = random.nextInt(128)
       val k13 = z + random.nextInt(16)
       new WorldGenMinable(Blocks.DIRT.getDefaultState, 32).generate(world, random.self, new BlockPos(l5, i9, k13))
     }
 
-    for (k2 <- 0 until 10) {
+    for (_ <- 0 until 10) {
       val i6 = x + random.nextInt(16)
       val j9 = random.nextInt(128)
       val l13 = z + random.nextInt(16)
       new WorldGenMinable(Blocks.GRAVEL.getDefaultState, 32).generate(world, random.self, new BlockPos(i6, j9, l13))
     }
 
-    for (i <- 0 until 20) {
+    for (_ <- 0 until 20) {
       val j6 = x + random.nextInt(16)
       val k9 = random.nextInt(128)
       val i14 = z + random.nextInt(16)
       new WorldGenMinable(Blocks.COAL_ORE.getDefaultState, 16).generate(world, random.self, new BlockPos(j6, k9, i14))
     }
 
-    for (j3 <- 0 until 20) {
+    for (_ <- 0 until 20) {
       val k6 = x + random.nextInt(16)
       val l9 = random.nextInt(64)
       val j14 = z + random.nextInt(16)
       new WorldGenMinable(Blocks.IRON_ORE.getDefaultState, 8).generate(world, random.self, new BlockPos(k6, l9, j14))
     }
 
-    for (k3 <- 0 until 2) {
+    for (_ <- 0 until 2) {
       val l6 = x + random.nextInt(16)
       val i10 = random.nextInt(32)
       val k14 = z + random.nextInt(16)
       new WorldGenMinable(Blocks.GOLD_ORE.getDefaultState, 8).generate(world, random.self, new BlockPos(l6, i10, k14))
     }
 
-    for (l3 <- 0 until 8) {
+    for (_ <- 0 until 8) {
       val i7 = x + random.nextInt(16)
       val j10 = random.nextInt(16)
       val l14 = z + random.nextInt(16)
       new WorldGenMinable(Blocks.REDSTONE_ORE.getDefaultState, 7).generate(world, random.self, new BlockPos(i7, j10, l14))
     }
 
-    for (i4 <- 0 until 1) {
+    for (_ <- 0 until 1) {
       val j7 = x + random.nextInt(16)
       val k10 = random.nextInt(16)
       val i15 = z + random.nextInt(16)
       new WorldGenMinable(Blocks.DIAMOND_ORE.getDefaultState, 7).generate(world, random.self, new BlockPos(j7, k10, i15))
     }
 
-    for (j4 <- 0 until 1) {
+    for (_ <- 0 until 1) {
       val k7 = x + random.nextInt(16)
       val l10 = random.nextInt(16) + random.nextInt(16)
       val j15 = z + random.nextInt(16)
@@ -270,14 +270,14 @@ class ScalaChunkProviderSky(world: World, random: Random) {
     // tundra
     if (biome == Biomes.COLD_TAIGA) numTrees -= 20
     if (biome == Biomes.PLAINS) numTrees -= 20
-    for (i11 <- 0 until numTrees) {
+    for (_ <- 0 until numTrees) {
       val k15 = x + random.nextInt(16) + 8
       val j18 = z + random.nextInt(16) + 8
-      val worldgenerator = biome.genBigTreeChance(random.self)
-      worldgenerator.generate(world, random.self, new BlockPos(k15, world.getHeightmapHeight(k15, j18), j18))
+      val worldGenerator = biome.genBigTreeChance(random.self)
+      worldGenerator.generate(world, random.self, new BlockPos(k15, world.getHeightmapHeight(k15, j18), j18))
     }
 
-    for (j11 <- 0 until 2) {
+    for (_ <- 0 until 2) {
       val l15 = x + random.nextInt(16) + 8
       val k18 = random.nextInt(128)
       val i21 = z + random.nextInt(16) + 8
@@ -302,7 +302,7 @@ class ScalaChunkProviderSky(world: World, random: Random) {
       val j19 = z + random.nextInt(16) + 8
       new WorldGenBush(Blocks.RED_MUSHROOM).generate(world, random.self, new BlockPos(i12, k16, j19))
     }
-    for (j12 <- 0 until 10) {
+    for (_ <- 0 until 10) {
       val l16 = x + random.nextInt(16) + 8
       val k19 = random.nextInt(128)
       val j21 = z + random.nextInt(16) + 8
@@ -317,21 +317,21 @@ class ScalaChunkProviderSky(world: World, random: Random) {
     }
 
 
-    for (j17 <- 0 until (if (biome == Biomes.DESERT) 10 else 0)) {
+    for (_ <- 0 until (if (biome == Biomes.DESERT) 10 else 0)) {
       val i20 = x + random.nextInt(16) + 8
       val k21 = random.nextInt(128)
       val k22 = z + random.nextInt(16) + 8
       new WorldGenCactus().generate(world, random.self, new BlockPos(i20, k21, k22))
     }
 
-    for (k17 <- 0 until 50) {
+    for (_ <- 0 until 50) {
       val j20 = x + random.nextInt(16) + 8
       val l21 = random.nextInt(random.nextInt(120) + 8)
       val l22 = z + random.nextInt(16) + 8
       new WorldGenLiquids(Blocks.FLOWING_WATER).generate(world, random.self, new BlockPos(j20, l21, l22))
     }
 
-    for (l17 <- 0 until 20) {
+    for (_ <- 0 until 20) {
       val k20 = x + random.nextInt(16) + 8
       val i22 = random.nextInt(random.nextInt(random.nextInt(112) + 8) + 8)
       val i23 = z + random.nextInt(16) + 8
