@@ -28,9 +28,6 @@ public class ChunkProviderSky {
     private NoiseGeneratorOctaves noise11;
     public NoiseGeneratorPerlin noise12;
     private World world;
-    private double pnr[] = new double[256];
-    private double ar[] = new double[256];
-    private double br[] = new double[256];
     private MapGenBase mapGenCaves = new MapGenCaves();
 
     public ChunkProviderSky(World world, Random random) {
@@ -38,10 +35,10 @@ public class ChunkProviderSky {
         this.random = random;
         lperlinNoise1 = new NoiseGeneratorOctaves(random, 16);
         lperlinNoise2 = new NoiseGeneratorOctaves(random, 16);
-        perlinNoise1  = new NoiseGeneratorOctaves(random, 8);
-        noise10       = new NoiseGeneratorOctaves(random, 4);
-        noise11       = new NoiseGeneratorOctaves(random, 4);
-        noise12       = new NoiseGeneratorPerlin(random, 8);
+        perlinNoise1 = new NoiseGeneratorOctaves(random, 8);
+        noise10 = new NoiseGeneratorOctaves(random, 4);
+        noise11 = new NoiseGeneratorOctaves(random, 4);
+        noise12 = new NoiseGeneratorPerlin(random, 8);
     }
 
     private void generateStone(int chunkX, int chunkZ, ChunkPrimer primer) {
@@ -102,9 +99,7 @@ public class ChunkProviderSky {
 
     private void replaceBiomeBlocks(int xChunk, int zChunk, ChunkPrimer primer, Biome biomes[]) {
         double d = 0.03125D;
-        pnr = noise10.generateNoiseOctaves(pnr, xChunk * 16, zChunk * 16, 0, 16, 16, 1, d, d, 1.0D);
-        ar = noise10.generateNoiseOctaves(ar, xChunk * 16, 109 /*109.0134D*/, zChunk * 16, 16, 1, 16, d, 1.0D, d);
-        br = noise11.generateNoiseOctaves(br, xChunk * 16, zChunk * 16, 0, 16, 16, 1, d * 2D, d * 2D, d * 2D);
+        double[] br = noise11.generateNoiseOctaves(new double[256], xChunk * 16, zChunk * 16, 0, 16, 16, 1, d * 2D, d * 2D, d * 2D);
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 Biome biome = biomes[x + z * 16];
@@ -212,7 +207,7 @@ public class ChunkProviderSky {
         long l1 = (random.nextLong() / 2L) * 2L + 1L;
         long l2 = (random.nextLong() / 2L) * 2L + 1L;
         random.setSeed((long) chunkX * l1 + (long) chunkZ * l2 ^ world.getSeed());
-        double d = 0.25D;
+
         if (random.nextInt(4) == 0) {
             int i1 = x + random.nextInt(16) + 8;
             int l4 = random.nextInt(128);
@@ -297,8 +292,7 @@ public class ChunkProviderSky {
             (new WorldGenMinable(Blocks.LAPIS_ORE.getDefaultState(), 6)).generate(world, random, new BlockPos(k7, l10, j15));
         }
 
-        d = 0.5D;
-        int k4 = (int) ((noise12.getValue((double) x * d, (double) z * d) / 8D + random.nextDouble() * 4D + 4D) / 3D);
+        int k4 = (int) ((noise12.getValue((double) x * 0.5D, (double) z * 0.5D) / 8D + random.nextDouble() * 4D + 4D) / 3D);
 
         int numTrees = 0;
         if (random.nextInt(10) == 0) numTrees++;
@@ -386,7 +380,6 @@ public class ChunkProviderSky {
             for (int z2 = 0; z2 < 16; z2++) {
                 int y1 = world.getTopSolidOrLiquidBlock(new BlockPos(x2 + x + 8, 0, z2 + z + 8)).getY();
                 BlockPos snowPos = new BlockPos(x2 + x + 8, y1, z2 + z + 8);
-                double temp = biome.getFloatTemperature(snowPos) - ((double) (y1 - 64) / 64D) * 0.29999999999999999D;
                 if (world.canSnowAt(snowPos, true) && y1 > 0 && y1 < 128 &&
                         world.isAirBlock(snowPos) &&
                         world.getBlockState(snowPos.add(0, -1, 0)).getMaterial().isSolid() &&
