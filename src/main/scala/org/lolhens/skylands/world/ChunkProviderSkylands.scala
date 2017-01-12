@@ -57,7 +57,7 @@ class ChunkProviderSkylands(world: World) extends IChunkGenerator {
 
     val blockPos = new BlockPos(x, 0, z)
     val biome = world.getBiome(blockPos.add(16, 0, 16))
-    System.out.print(biome.getBiomeName)
+    //System.out.print(biome.getBiomeName)
 
     terrainGenerator.populate(chunkX, chunkZ)
 
