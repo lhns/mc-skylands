@@ -16,25 +16,31 @@ import scala.util.Random
   * Created by pierr on 09.01.2017.
   */
 class ScalaChunkProviderSky(world: World, random: Random) {
-  private val noise11 = new NoiseGeneratorOctaves(random.self, 4)
-  private val noise12 = new NoiseGeneratorPerlin(random.self, 8)
-  private val mapGenCaves = new MapGenCaves()
-
+  // Order is important!
   private val lperlinNoise1 = new NoiseGeneratorOctaves(random.self, 16)
   private val lperlinNoise2 = new NoiseGeneratorOctaves(random.self, 16)
   private val perlinNoise1 = new NoiseGeneratorOctaves(random.self, 8)
+  new NoiseGeneratorOctaves(random.self, 4)
+  private val noise11 = new NoiseGeneratorOctaves(random.self, 4)
+  new NoiseGeneratorOctaves(random.self, 10)
+  new NoiseGeneratorOctaves(random.self, 16)
+  private val noise12 = new NoiseGeneratorPerlin(random.self, 8)
 
-  val self = new ChunkProviderSky(world, random.self)
+  private val mapGenCaves = new MapGenCaves()
+
 
   def getNoiseArray(xOffset: Int, yOffset: Int, zOffset: Int, xSize: Int, ySize: Int, zSize: Int): Array[Double] = {
     val noiseArray = new Array[Double](xSize * ySize * zSize)
-    val d: Double = 684.41200000000003D * 2D
+    var d: Double = 684.41200000000003D
     val d1: Double = 684.41200000000003D
+
+    d *= 2D
 
     val noise1: Array[Double] = perlinNoise1.generateNoiseOctaves(null, xOffset, yOffset, zOffset, xSize, ySize, zSize, d / 80D, d1 / 160D, d / 80D)
     val noisel1: Array[Double] = lperlinNoise1.generateNoiseOctaves(null, xOffset, yOffset, zOffset, xSize, ySize, zSize, d, d1, d)
     val noise2: Array[Double] = lperlinNoise2.generateNoiseOctaves(null, xOffset, yOffset, zOffset, xSize, ySize, zSize, d, d1, d)
-    var index = 0
+    println(noise1(2))
+    var index: Int = 0
     for (_ <- 0 until xSize;
          _ <- 0 until zSize;
          z <- 0 until ySize) {
@@ -50,14 +56,14 @@ class ScalaChunkProviderSky(world: World, random: Random) {
         else
           d10 + (d11 - d10) * d12
 
-      noise -= 8
+      noise -= 8D
 
       if (z > ySize - 32) {
-        val d13: Double = (z - (ySize - 32)).toFloat / (32 - 1.0F)
+        val d13: Double = (z - (ySize - 32)).toFloat / (32.toFloat - 1.0F)
         noise = noise * (1.0D - d13) + -30D * d13
       }
       if (z < 8) {
-        val d14: Double = (8 - z).toFloat / (8 - 1.0F)
+        val d14: Double = (8 - z).toFloat / (8.toFloat - 1.0F)
         noise = noise * (1.0D - d14) + -30D * d14
       }
       noiseArray(index) = noise
@@ -68,8 +74,11 @@ class ScalaChunkProviderSky(world: World, random: Random) {
   }
 
   def generateStone(chunkX: Int, chunkZ: Int, primer: ChunkPrimer): Unit = {
-    val noiseArray: Array[Double] = /*self.getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3)*/getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3)
-    println(s"${noiseArray(20)} ?= ${self.getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3).apply(20)}")
+
+    //val othernoise = self.getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3)
+    val noiseArray: Array[Double] = /*self.getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3)*/
+      getNoiseArray(chunkX * 2, 0, chunkZ * 2, 3, 33, 3)
+    //println(s"${noiseArray(20)} ?= ${othernoise.apply(20)}")
     for (i1 <- 0 until 2;
          j1 <- 0 until 2;
          k1 <- 0 until 32) {

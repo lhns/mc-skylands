@@ -149,15 +149,16 @@ public class ChunkProviderSky {
         mapGenCaves.generate(world, chunkX, chunkZ, primer);
     }
 
-    double[] getNoiseArray(int x, int y, int z, int sizeX, int sizeY, int sizeZ) {
+    double[] getNoiseArray(int xOffset, int yOffset, int zOffset, int sizeX, int sizeY, int sizeZ) {
         double[] noiseArray = new double[sizeX * sizeY * sizeZ];
         double d = 684.41200000000003D;
         double d1 = 684.41200000000003D;
 
         d *= 2D;
-        double[] noise1 = perlinNoise1.generateNoiseOctaves(null, x, y, z, sizeX, sizeY, sizeZ, d / 80D, d1 / 160D, d / 80D);
-        double[] noisel1 = lperlinNoise1.generateNoiseOctaves(null, x, y, z, sizeX, sizeY, sizeZ, d, d1, d);
-        double[] noise2 = lperlinNoise2.generateNoiseOctaves(null, x, y, z, sizeX, sizeY, sizeZ, d, d1, d);
+        double[] noise1 = perlinNoise1.generateNoiseOctaves(null, xOffset, yOffset, zOffset, sizeX, sizeY, sizeZ, d / 80D, d1 / 160D, d / 80D);
+        double[] noisel1 = lperlinNoise1.generateNoiseOctaves(null, xOffset, yOffset, zOffset, sizeX, sizeY, sizeZ, d, d1, d);
+        double[] noise2 = lperlinNoise2.generateNoiseOctaves(null, xOffset, yOffset, zOffset, sizeX, sizeY, sizeZ, d, d1, d);
+        System.out.println(noise1[2]);
         int index = 0;
         for (int j2 = 0; j2 < sizeX; j2++) {
             for (int l2 = 0; l2 < sizeZ; l2++) {
@@ -175,6 +176,7 @@ public class ChunkProviderSky {
                         noise = d10 + (d11 - d10) * d12;
 
                     noise -= 8D;
+
                     int k3 = 32;
                     if (j3 > sizeY - k3) {
                         double d13 = (float) (j3 - (sizeY - k3)) / ((float) k3 - 1.0F);
