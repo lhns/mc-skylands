@@ -1,4 +1,4 @@
-package org.lolhens.skylands.blocks
+package org.lolhens.skylands.block
 
 import net.minecraft.block.material.Material
 import net.minecraft.block.state.IBlockState

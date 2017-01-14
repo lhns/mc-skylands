@@ -11,7 +11,7 @@ import net.minecraftforge.common.{DimensionManager, MinecraftForge}
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.common.registry.GameRegistry
-import org.lolhens.skylands.blocks.{BlockBeanPlant, BlockBeanStem, BlockPortal}
+import org.lolhens.skylands.block.{BlockBean, BlockBeanStem, BlockPortal}
 import org.lolhens.skylands.tileentities.TileEntityBeanPlant
 import org.lolhens.skylands.world.{SimpleTeleporter, WorldProviderSkylands}
 
@@ -29,10 +29,10 @@ class Skylands(configFile: File) {
   GameRegistry.register(beanstem.setRegistryName("beanstem"))
   GameRegistry.register(new ItemBlock(beanstem).setRegistryName(beanstem.getRegistryName))
 
-  val beanplant = new BlockBeanPlant()
-  GameRegistry.register(beanplant.setRegistryName("beanplant"))
-  GameRegistry.register(new ItemBlock(beanplant).setRegistryName(beanplant.getRegistryName))
-  GameRegistry.registerTileEntity(classOf[TileEntityBeanPlant], "beanplant_tile_entity")
+  val bean = new BlockBean()
+  GameRegistry.register(bean.setRegistryName("bean"))
+  GameRegistry.register(new ItemBlock(bean).setRegistryName(bean.getRegistryName))
+  GameRegistry.registerTileEntity(classOf[TileEntityBeanPlant], "bean_tile_entity")
 
   val skylandsDimensionType: DimensionType = DimensionType.register("Skylands", "sky", config.dimensionId, classOf[WorldProviderSkylands], false)
   DimensionManager.registerDimension(config.dimensionId, skylandsDimensionType)

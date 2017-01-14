@@ -1,4 +1,4 @@
-package org.lolhens.skylands.blocks
+package org.lolhens.skylands.block
 
 import net.minecraft.block.material.Material
 import net.minecraft.block.state.IBlockState
@@ -12,8 +12,8 @@ import org.lolhens.skylands.tileentities.TileEntityBeanPlant
 /**
   * Created by pierr on 14.01.2017.
   */
-class BlockBeanPlant extends BlockContainer(Material.CACTUS) {
-  setUnlocalizedName("skylandsmod:beanplant")
+class BlockBean extends BlockContainer(Material.CACTUS) {
+  setUnlocalizedName("skylandsmod:bean")
   setCreativeTab(CreativeTabs.MISC)
   setHardness(0.8f)
   setResistance(3)
