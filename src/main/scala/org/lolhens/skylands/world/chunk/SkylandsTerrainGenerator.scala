@@ -1,4 +1,4 @@
-package org.lolhens.skylands.world
+package org.lolhens.skylands.world.chunk
 
 import net.minecraft.block.material.Material
 import net.minecraft.block.{BlockFalling, BlockFlower}

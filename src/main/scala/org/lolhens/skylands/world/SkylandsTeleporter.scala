@@ -4,15 +4,15 @@ import net.minecraft.entity.Entity
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.init.Blocks
 import net.minecraft.util.math.BlockPos
-import net.minecraft.world.{Teleporter, WorldServer}
+import net.minecraft.world.WorldServer
 import org.lolhens.skylands.SkylandsMod
 
 /**
   * Created by pierr on 01.01.2017.
   */
-class SkylandsTeleporter(world: WorldServer, position: BlockPos) extends Teleporter(world) {
-  override def placeInPortal(entity: Entity, rotationYaw: Float): Unit = {
-    val skylandsDimensionId = SkylandsMod.skylands.dimensionType.getId
+class SkylandsTeleporter(world: WorldServer, position: BlockPos) extends AbstractTeleporter(world) {
+  override def teleport(entity: Entity, rotationYaw: Float): Unit = {
+    val skylandsDimensionId = SkylandsMod.skylands.skylandsDimensionType.getId
 
     val portalPosition = world.provider.getDimension match {
       case `skylandsDimensionId` => // Teleporting to skylands

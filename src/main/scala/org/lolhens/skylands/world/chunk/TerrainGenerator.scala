@@ -1,4 +1,4 @@
-package org.lolhens.skylands.world
+package org.lolhens.skylands.world.chunk
 
 import net.minecraft.world.World
 import net.minecraft.world.chunk.ChunkPrimer

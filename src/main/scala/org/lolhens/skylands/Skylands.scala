@@ -2,14 +2,18 @@ package org.lolhens.skylands
 
 import java.io.File
 
+import net.minecraft.entity.player.EntityPlayerMP
+import net.minecraft.init.Items
 import net.minecraft.item.ItemBlock
-import net.minecraft.world.DimensionType
+import net.minecraft.util.math.BlockPos
+import net.minecraft.world.{DimensionType, Teleporter, World}
 import net.minecraftforge.common.{DimensionManager, MinecraftForge}
-import net.minecraftforge.event.entity.player.EntityItemPickupEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.common.registry.GameRegistry
-import org.lolhens.skylands.blocks.BlockPortal
-import org.lolhens.skylands.world.WorldProviderSkylands
+import org.lolhens.skylands.blocks.{BlockBeanPlant, BlockBeanStem, BlockPortal}
+import org.lolhens.skylands.tileentities.TileEntityBeanPlant
+import org.lolhens.skylands.world.{SimpleTeleporter, WorldProviderSkylands}
 
 /**
   * Created by pierr on 02.01.2017.
@@ -21,24 +25,62 @@ class Skylands(configFile: File) {
   GameRegistry.register(portal.setRegistryName("portal"))
   GameRegistry.register(new ItemBlock(portal).setRegistryName(portal.getRegistryName))
 
-  val dimensionType: DimensionType = DimensionType.register("Skylands", "sky", config.dimensionId, classOf[WorldProviderSkylands], false)
-  DimensionManager.registerDimension(config.dimensionId, dimensionType)
+  val beanstem = new BlockBeanStem()
+  GameRegistry.register(beanstem.setRegistryName("beanstem"))
+  GameRegistry.register(new ItemBlock(beanstem).setRegistryName(beanstem.getRegistryName))
+
+  val beanplant = new BlockBeanPlant()
+  GameRegistry.register(beanplant.setRegistryName("beanplant"))
+  GameRegistry.register(new ItemBlock(beanplant).setRegistryName(beanplant.getRegistryName))
+  GameRegistry.registerTileEntity(classOf[TileEntityBeanPlant], "beanplant_tile_entity")
+
+  val skylandsDimensionType: DimensionType = DimensionType.register("Skylands", "sky", config.dimensionId, classOf[WorldProviderSkylands], false)
+  DimensionManager.registerDimension(config.dimensionId, skylandsDimensionType)
 
   def init(): Unit = {
     MinecraftForge.EVENT_BUS.register(this)
   }
 
   @SubscribeEvent
-  def onItemPickup(event: EntityItemPickupEvent): Unit = {
-    println("ITEM PICKUP")
-    /*if (event.getItem.getEntityItem.getItem == Items.GOLDEN_APPLE) {
-      println("APPLE")
-      event.getEntityPlayer match {
-        case player: EntityPlayerMP =>
-          player.getServer.getPlayerList.transferPlayerToDimension(player, dimensionType.getId, new SkylandsTeleporter(event.getEntityPlayer.getServer.worldServerForDimension(skylandsDimensionType.getId)))
+  def onPlayerTick(event: TickEvent.PlayerTickEvent): Unit = {
+    val player = event.player
 
-      }
-      //event.getEntityPlayer.changeDimension(skylandsDimensionType.getId)
-    }*/
+    player match {
+      case player: EntityPlayerMP =>
+        val teleportTarget: Option[(Int, BlockPos)] =
+          if (player.dimension == DimensionType.OVERWORLD.getId && player.posY >= 250) {
+            def isNearBeanStem(world: World, pos: BlockPos, radius: Int) = {
+              val positions = for (
+                x <- -radius to radius;
+                z <- -radius to radius
+              ) yield pos.add(x, 0, z)
+
+              positions.exists(position => world.getBlockState(position).getBlock == beanstem)
+            }
+
+            if (isNearBeanStem(player.worldObj, new BlockPos(player), 4))
+              Some((skylandsDimensionType.getId, new BlockPos(player.posX, 10, player.posZ)))
+            else
+              None
+          } else if (player.dimension == skylandsDimensionType.getId && player.posY <= 5)
+            Some((DimensionType.OVERWORLD.getId, new BlockPos(player.posX, 245, player.posZ)))
+          else
+            None
+
+        for ((dimensionId, position) <- teleportTarget) {
+          val teleporter: Teleporter = new SimpleTeleporter(player.getServer.worldServerForDimension(dimensionId), Some(position))
+          player.getServer.getPlayerList.transferPlayerToDimension(player, dimensionId, teleporter)
+        }
+
+      case _ =>
+    }
+
+    val heldItem = Option(player.getHeldItemMainhand).map(_.getItem)
+
+    if (heldItem.contains(Items.FEATHER) && !player.capabilities.isCreativeMode) {
+      println(player.jumpMovementFactor)
+      player.motionY = Math.max(player.motionY, -0.3)
+      player.fallDistance = 0
+    }
   }
 }

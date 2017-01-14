@@ -1,4 +1,4 @@
-package org.lolhens.skylands.world
+package org.lolhens.skylands.world.chunk
 
 import java.util
 
@@ -37,15 +37,15 @@ class ChunkProviderSkylands(world: World) extends IChunkGenerator {
   override def provideChunk(chunkX: Int, chunkZ: Int): Chunk = {
     val chunkPrimer = new ChunkPrimer()
 
-    val biomesForGeneration = world.getBiomeProvider.getBiomesForGeneration(Array[Biome](), chunkX * 16, chunkZ * 16, 16, 16)
+    //val biomesForGeneration = world.getBiomeProvider.getBiomesForGeneration(Array[Biome](), chunkX * 16, chunkZ * 16, 16, 16)
 
     terrainGenerator.generate(chunkX, chunkZ, chunkPrimer)
 
     val chunk = new Chunk(world, chunkPrimer, chunkX, chunkZ)
 
-    val biomeArray = chunk.getBiomeArray
+    /*val biomeArray = chunk.getBiomeArray
     for (i <- 0 until biomeArray.length)
-      biomeArray(i) = Biome.getIdForBiome(biomesForGeneration(i)).toByte
+      biomeArray(i) = Biome.getIdForBiome(biomesForGeneration(i)).toByte*/
 
     chunk.generateSkylightMap()
 
