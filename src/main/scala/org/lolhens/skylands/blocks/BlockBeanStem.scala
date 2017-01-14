@@ -1,6 +1,10 @@
 package org.lolhens.skylands.blocks
 
 import net.minecraft.block.material.Material
+import net.minecraft.block.properties.PropertyBool
+import net.minecraft.block.properties.PropertyEnum
+import net.minecraft.block.state.BlockStateContainer
+import net.minecraft.block.state.IBlockState
 import net.minecraft.block.{Block, SoundType}
 import net.minecraft.creativetab.CreativeTabs
 
@@ -13,4 +17,13 @@ class BlockBeanStem extends Block(Material.CACTUS) {
   setHardness(0.8f)
   setResistance(3)
   setSoundType(SoundType.WOOD)
+
+  override def createBlockState(): BlockStateContainer = new BlockStateContainer(this, BlockBeanStem.isCenter)
+
+  override def getMetaFromState(state: IBlockState): Int = 0
+  override def getStateFromMeta(meta: Int): IBlockState = this.getDefaultState
+}
+
+object BlockBeanStem {
+  val isCenter: PropertyBool = PropertyBool.create("center")
 }

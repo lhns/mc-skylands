@@ -12,6 +12,7 @@ import net.minecraftforge.client.model.ModelLoader
 class SkylandsClient(configFile: File) extends Skylands(configFile) {
   registerModel(Item.getItemFromBlock(portal), 0)
   registerModel(Item.getItemFromBlock(beanstem), 0)
+  registerModel(Item.getItemFromBlock(beanstem), 1)
   registerModel(Item.getItemFromBlock(beanplant), 0)
 
   def registerModel(item: Item, meta: Int): Unit =
