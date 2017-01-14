@@ -58,7 +58,7 @@ class Skylands(configFile: File) {
               positions.exists(position => world.getBlockState(position).getBlock == beanstem)
             }
 
-            if (isNearBeanStem(player.worldObj, new BlockPos(player), 4))
+            if (isNearBeanStem(player.world, new BlockPos(player), 4))
               Some((skylandsDimensionType.getId, new BlockPos(player.posX, 10, player.posZ)))
             else
               None

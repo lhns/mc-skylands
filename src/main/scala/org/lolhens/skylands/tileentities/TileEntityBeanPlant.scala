@@ -16,7 +16,7 @@ class TileEntityBeanPlant extends TileEntity with ITickable {
   private var progress: Int = 0
 
   override def update(): Unit = {
-    worldObj match {
+    world match {
       case world: WorldServer =>
         val worldSkylands = world.getMinecraftServer.worldServerForDimension(SkylandsMod.skylands.skylandsDimensionType.getId)
 

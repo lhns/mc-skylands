@@ -350,7 +350,7 @@ class SkylandsTerrainGenerator(world: World, random: Random) extends TerrainGene
         populateRandom.nextInt(16) + 8
       )
 
-      val pos = xzPos.add(0, world.getHeightmapHeight(xzPos.getX, xzPos.getZ), 0)
+      val pos = xzPos.add(0, world.getHeight(xzPos.getX, xzPos.getZ), 0)
 
       val treeGenerator = biome.genBigTreeChance(populateRandom.self)
       treeGenerator.generate(world, populateRandom.self, pos)

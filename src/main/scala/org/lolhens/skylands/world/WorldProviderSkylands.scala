@@ -13,7 +13,7 @@ import org.lolhens.skylands.world.chunk.ChunkProviderSkylands
 class WorldProviderSkylands extends WorldProvider {
   override def getDimensionType: DimensionType = SkylandsMod.skylands.skylandsDimensionType
 
-  override def createChunkGenerator(): IChunkGenerator = new ChunkProviderSkylands(worldObj)
+  override def createChunkGenerator(): IChunkGenerator = new ChunkProviderSkylands(world)
 
   override def canRespawnHere: Boolean = false
 
