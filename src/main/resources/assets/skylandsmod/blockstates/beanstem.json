@@ -2,16 +2,17 @@
   "forge_marker": 1,
   "defaults": {
     "textures": {
-      "all": "skylandsmod:blocks/beanstem"
+      "side": "skylandsmod:blocks/beanstem_side",
+      "end": "skylandsmod:blocks/beanstem"
     },
     "transform": "forge:default-block",
-    "model": "cube_all"
+    "model": "cube_column"
   },
   "variants": {
     "inventory": [
       {}
     ],
-    "normal":[
+    "normal": [
       {}
     ]
   }
