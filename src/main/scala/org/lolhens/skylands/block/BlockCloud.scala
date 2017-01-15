@@ -39,13 +39,15 @@ class BlockCloud extends Block(Material.CLOTH) {
   override def shouldSideBeRendered(blockState: IBlockState, blockAccess: IBlockAccess, pos: BlockPos, side: EnumFacing): Boolean = {
     val vertical = side.getAxis == Axis.Y
 
-    def otherBlock(side: EnumFacing) = blockAccess.getBlockState(pos.offset(side)).getBlock != this
+    def isCloud(side: EnumFacing) = blockAccess.getBlockState(pos.offset(side)).getBlock == this
+
+    def isHidden(side: EnumFacing) = !isCloud(side) && !blockAccess.isAirBlock(pos.offset(side))
 
     vertical ||
-      otherBlock(side) ||
-      otherBlock(side.rotateY()) ||
-      otherBlock(side.rotateY().rotateY()) ||
-      otherBlock(side.rotateY().rotateY().rotateY())
+      !isCloud(side) ||
+      isHidden(side.rotateY()) ||
+      isHidden(side.rotateY().rotateY()) ||
+      isHidden(side.rotateY().rotateY().rotateY())
   }
 
   override def getCollisionBoundingBox(blockState: IBlockState, worldIn: World, pos: BlockPos): AxisAlignedBB = Block.NULL_AABB

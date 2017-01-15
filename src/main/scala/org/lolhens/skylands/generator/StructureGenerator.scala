@@ -1,7 +1,7 @@
 package org.lolhens.skylands.generator
 
 import net.minecraft.util.math.BlockPos
-import net.minecraft.world.{World, WorldServer}
+import net.minecraft.world.WorldServer
 
 /**
   * Created by pierr on 15.01.2017.

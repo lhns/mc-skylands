@@ -3,17 +3,17 @@ package org.lolhens.skylands
 import java.io.File
 
 import net.minecraft.entity.player.EntityPlayerMP
-import net.minecraft.init.Items
 import net.minecraft.item.ItemBlock
-import net.minecraft.util.math.BlockPos
-import net.minecraft.world.{DimensionType, Teleporter, World}
+import net.minecraft.world.DimensionType
 import net.minecraftforge.common.{DimensionManager, MinecraftForge}
+import net.minecraftforge.event.world.WorldEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.common.registry.GameRegistry
 import org.lolhens.skylands.block.{BlockBean, BlockBeanStem, BlockCloud, BlockPortal}
+import org.lolhens.skylands.feature.{FallIntoOverworld, FeatherGliding}
 import org.lolhens.skylands.tileentities.TileEntityBeanPlant
-import org.lolhens.skylands.world.{SimpleTeleporter, WorldProviderSkylands}
+import org.lolhens.skylands.world.WorldProviderSkylands
 
 /**
   * Created by pierr on 02.01.2017.
@@ -46,47 +46,39 @@ class Skylands(configFile: File) {
   }
 
   @SubscribeEvent
+  def onWorldLoad(event: WorldEvent.Unload): Unit = {
+    println(event.getWorld)
+    println(event.getPhase)
+  }
+
+  def keepSkylandsLoaded(): Unit = {
+    skylandsDimensionType.setLoadSpawn(true)
+    _keepSkylandsLoaded = true
+  }
+
+  private var _keepSkylandsLoaded = false
+
+  @SubscribeEvent
+  def onWorldTick(event: TickEvent.WorldTickEvent): Unit = {
+    if (event.world.provider.getDimensionType == skylandsDimensionType) {
+      if (_keepSkylandsLoaded)
+        _keepSkylandsLoaded = false
+      else if (skylandsDimensionType.shouldLoadSpawn())
+        skylandsDimensionType.setLoadSpawn(false)
+    }
+  }
+
+  @SubscribeEvent
   def onPlayerTick(event: TickEvent.PlayerTickEvent): Unit = {
     val player = event.player
 
     player match {
       case player: EntityPlayerMP =>
-        val teleportTarget: Option[(Int, BlockPos)] =
-          if (player.dimension == DimensionType.OVERWORLD.getId && player.posY >= 250) {
-            def isNearBeanStem(world: World, pos: BlockPos, radius: Int) = {
-              val positions = for (
-                x <- -radius to radius;
-                z <- -radius to radius
-              ) yield pos.add(x, 0, z)
-
-              positions.exists(position => world.getBlockState(position).getBlock == blockBeanStem)
-            }
-
-            /*if (isNearBeanStem(player.world, new BlockPos(player), 4))
-              Some((skylandsDimensionType.getId, new BlockPos(player.posX, 10, player.posZ)))
-            else*/
-            None
-          } else if (player.dimension == skylandsDimensionType.getId && player.posY <= 5)
-            Some((DimensionType.OVERWORLD.getId, new BlockPos(player.posX, 245, player.posZ)))
-          else
-            None
-
-        for ((dimensionId, position) <- teleportTarget) {
-          val teleporter: Teleporter = new SimpleTeleporter(player.getServer.worldServerForDimension(dimensionId), Some(position))
-          player.getServer.getPlayerList.transferPlayerToDimension(player, dimensionId, teleporter)
-        }
+        FallIntoOverworld.update(player)
 
       case _ =>
     }
 
-    val heldItem = Option(player.getHeldItemMainhand).map(_.getItem)
-
-    if (player.dimension == skylandsDimensionType.getId && heldItem.contains(Items.FEATHER) && !player.capabilities.isFlying) {
-      if (player.motionY <= -0.3) {
-        player.jumpMovementFactor = 0.1f
-        player.motionY = Math.max(player.motionY, -0.3)
-      }
-      player.fallDistance = 0
-    }
+    FeatherGliding.update(player)
   }
 }

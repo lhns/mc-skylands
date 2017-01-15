@@ -1,7 +1,5 @@
 package org.lolhens.skylands.world
 
-import net.minecraft.entity.Entity
-import net.minecraft.util.math.Vec3d
 import net.minecraft.world.chunk.IChunkGenerator
 import net.minecraft.world.{DimensionType, WorldProvider}
 import org.lolhens.skylands.SkylandsMod

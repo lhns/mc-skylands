@@ -12,7 +12,7 @@ import org.lolhens.skylands.block.BlockBeanStem
   * Created by pierr on 15.01.2017.
   */
 class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends StructureGenerator(world, position) {
-  private val worldSkylands = world.getMinecraftServer.worldServerForDimension(SkylandsMod.skylands.skylandsDimensionType.getId)
+  private def worldSkylands = world.getMinecraftServer.worldServerForDimension(SkylandsMod.skylands.skylandsDimensionType.getId)
 
   private val perlinNoiseSLOctaves = 7
   private val amplitudeMax = 40.0
@@ -104,6 +104,7 @@ class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends Structu
   }
 
   override def update(): Unit = {
+    //if (progress == 0) SkylandsMod.skylands.skylandsDimensionType.setLoadSpawn(true)
     val xOffset = sineLayerAmplitudes.zip(sineLayerOffset).zipWithIndex.map {
       case ((ampl, offset), index) =>
         //println((ampl, offset, index))
@@ -117,8 +118,10 @@ class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends Structu
 
     val destinationPosition = position.add(xOffset, progress + 3, zOffset)
 
-    if (destinationPosition.getY > 350)
+    if (destinationPosition.getY > 350) {
       world.setBlockState(position, SkylandsMod.skylands.blockBeanStem.getDefaultState)
+      //SkylandsMod.skylands.skylandsDimensionType.setLoadSpawn(false)
+    }
 
     drawLayer(destinationPosition)
 

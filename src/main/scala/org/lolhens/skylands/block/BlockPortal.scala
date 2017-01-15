@@ -10,7 +10,7 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.util.{EnumFacing, EnumHand}
 import net.minecraft.world.{Teleporter, World}
 import org.lolhens.skylands.SkylandsMod
-import org.lolhens.skylands.world.{SimpleTeleporter, SkylandsTeleporter}
+import org.lolhens.skylands.world.SkylandsTeleporter
 
 /**
   * Created by pierr on 02.01.2017.
