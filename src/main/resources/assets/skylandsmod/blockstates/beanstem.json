@@ -16,7 +16,12 @@
       {}
     ],
     "center": {
-      "true": {},
+      "true": {
+        "textures": {
+          "side": "skylandsmod:blocks/beanstem_center_side",
+          "end": "skylandsmod:blocks/beanstem_center"
+        }
+      },
       "false": {}
     }
   }

@@ -11,7 +11,7 @@ import net.minecraftforge.common.{DimensionManager, MinecraftForge}
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.common.registry.GameRegistry
-import org.lolhens.skylands.block.{BlockBean, BlockBeanStem, BlockPortal}
+import org.lolhens.skylands.block.{BlockBean, BlockBeanStem, BlockCloud, BlockPortal}
 import org.lolhens.skylands.tileentities.TileEntityBeanPlant
 import org.lolhens.skylands.world.{SimpleTeleporter, WorldProviderSkylands}
 
@@ -21,18 +21,22 @@ import org.lolhens.skylands.world.{SimpleTeleporter, WorldProviderSkylands}
 class Skylands(configFile: File) {
   val config = new Config(configFile)
 
-  val portal = new BlockPortal()
-  GameRegistry.register(portal.setRegistryName("portal"))
-  GameRegistry.register(new ItemBlock(portal).setRegistryName(portal.getRegistryName))
+  val blockPortal = new BlockPortal()
+  GameRegistry.register(blockPortal.setRegistryName("portal"))
+  GameRegistry.register(new ItemBlock(blockPortal).setRegistryName(blockPortal.getRegistryName))
 
-  val beanstem = new BlockBeanStem()
-  GameRegistry.register(beanstem.setRegistryName("beanstem"))
-  GameRegistry.register(new ItemBlock(beanstem).setRegistryName(beanstem.getRegistryName))
+  val blockBeanStem = new BlockBeanStem()
+  GameRegistry.register(blockBeanStem.setRegistryName("beanstem"))
+  GameRegistry.register(new ItemBlock(blockBeanStem).setRegistryName(blockBeanStem.getRegistryName))
 
-  val bean = new BlockBean()
-  GameRegistry.register(bean.setRegistryName("bean"))
-  GameRegistry.register(new ItemBlock(bean).setRegistryName(bean.getRegistryName))
+  val blockBean = new BlockBean()
+  GameRegistry.register(blockBean.setRegistryName("bean"))
+  GameRegistry.register(new ItemBlock(blockBean).setRegistryName(blockBean.getRegistryName))
   GameRegistry.registerTileEntity(classOf[TileEntityBeanPlant], "bean_tile_entity")
+
+  val blockCloud = new BlockCloud()
+  GameRegistry.register(blockCloud.setRegistryName("cloud"))
+  GameRegistry.register(new ItemBlock(blockCloud).setRegistryName(blockCloud.getRegistryName))
 
   val skylandsDimensionType: DimensionType = DimensionType.register("Skylands", "sky", config.dimensionId, classOf[WorldProviderSkylands], false)
   DimensionManager.registerDimension(config.dimensionId, skylandsDimensionType)
@@ -55,13 +59,13 @@ class Skylands(configFile: File) {
                 z <- -radius to radius
               ) yield pos.add(x, 0, z)
 
-              positions.exists(position => world.getBlockState(position).getBlock == beanstem)
+              positions.exists(position => world.getBlockState(position).getBlock == blockBeanStem)
             }
 
-            if (isNearBeanStem(player.world, new BlockPos(player), 4))
+            /*if (isNearBeanStem(player.world, new BlockPos(player), 4))
               Some((skylandsDimensionType.getId, new BlockPos(player.posX, 10, player.posZ)))
-            else
-              None
+            else*/
+            None
           } else if (player.dimension == skylandsDimensionType.getId && player.posY <= 5)
             Some((DimensionType.OVERWORLD.getId, new BlockPos(player.posX, 245, player.posZ)))
           else
@@ -77,9 +81,11 @@ class Skylands(configFile: File) {
 
     val heldItem = Option(player.getHeldItemMainhand).map(_.getItem)
 
-    if (heldItem.contains(Items.FEATHER) && !player.capabilities.isCreativeMode) {
-      println(player.jumpMovementFactor)
-      player.motionY = Math.max(player.motionY, -0.3)
+    if (player.dimension == skylandsDimensionType.getId && heldItem.contains(Items.FEATHER) && !player.capabilities.isFlying) {
+      if (player.motionY <= -0.3) {
+        player.jumpMovementFactor = 0.1f
+        player.motionY = Math.max(player.motionY, -0.3)
+      }
       player.fallDistance = 0
     }
   }

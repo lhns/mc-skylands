@@ -18,7 +18,7 @@ class SkylandsTeleporter(world: WorldServer, position: BlockPos) extends Abstrac
       case `skylandsDimensionId` => // Teleporting to skylands
         println("to the skylands")
         val portalPosition = new BlockPos(position.getX, 64, position.getZ)
-        if (world.getBlockState(portalPosition).getBlock != SkylandsMod.skylands.portal) {
+        if (world.getBlockState(portalPosition).getBlock != SkylandsMod.skylands.blockPortal) {
           for (
             x <- -3 to 3;
             z <- -3 to 3;
@@ -26,7 +26,7 @@ class SkylandsTeleporter(world: WorldServer, position: BlockPos) extends Abstrac
             if world.isAirBlock(pos)
           ) world.setBlockState(pos, Blocks.STONE.getDefaultState)
 
-          world.setBlockState(portalPosition, SkylandsMod.skylands.portal.getDefaultState)
+          world.setBlockState(portalPosition, SkylandsMod.skylands.blockPortal.getDefaultState)
         }
         portalPosition
 
@@ -34,7 +34,7 @@ class SkylandsTeleporter(world: WorldServer, position: BlockPos) extends Abstrac
         case player: EntityPlayer => // Teleporting back
           println("and back")
           val yColumn: Seq[BlockPos] = for (y <- 0 until 256) yield new BlockPos(position.getX, y, position.getZ)
-          val portalPosition: Option[BlockPos] = yColumn.find(pos => world.getBlockState(pos).getBlock == SkylandsMod.skylands.portal)
+          val portalPosition: Option[BlockPos] = yColumn.find(pos => world.getBlockState(pos).getBlock == SkylandsMod.skylands.blockPortal)
           val spawnPoint: BlockPos = portalPosition.map(_.add(0, 1, 0))
             .orElse(Option(player.getBedLocation(dimensionId)))
             .getOrElse(world.provider.getRandomizedSpawnPoint)
