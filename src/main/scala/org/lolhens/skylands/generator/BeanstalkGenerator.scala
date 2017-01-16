@@ -1,12 +1,11 @@
 package org.lolhens.skylands.generator
 
-import net.minecraft.block.material.Material
 import net.minecraft.block.state.IBlockState
-import net.minecraft.init.Blocks
 import net.minecraft.util.math.BlockPos
-import net.minecraft.world.{World, WorldServer}
+import net.minecraft.world.WorldServer
 import org.lolhens.skylands.SkylandsMod
 import org.lolhens.skylands.block.BlockBeanStem
+import org.lolhens.skylands.enrich.RichBlockAccess._
 
 /**
   * Created by pierr on 15.01.2017.
@@ -28,22 +27,13 @@ class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends Structu
   private var progress: Int = 0
   private var lastBlockPos: BlockPos = position
 
-  private def isReplaceable(world: World, pos: BlockPos): Boolean = {
-    val blockState = world.getBlockState(pos)
-
-    blockState.getMaterial.isReplaceable
-    blockState.getBlock.isLeaves(blockState, world, pos) ||
-      Seq(Material.AIR, Material.LEAVES).contains(blockState.getMaterial) ||
-      Seq(Blocks.GRASS, Blocks.DIRT, Blocks.SAPLING, Blocks.VINE).contains(blockState.getBlock)
-  }
-
   private def drawBlock(position: BlockPos, blockState: IBlockState) = {
     if (position.getY <= 255)
-      if (isReplaceable(world, position) || world.getBlockState(position).getBlock == SkylandsMod.skylands.blockCloud)
+      if (world.isReplaceable(position) || world.isTerrainBlock(position) || world.getBlockState(position).getBlock == SkylandsMod.skylands.blockCloud)
         world.setBlockState(position, blockState)
     if (position.getY >= 245) {
       val skyPosition = position.add(0, -240, 0)
-      if (isReplaceable(worldSkylands, skyPosition) || worldSkylands.getBlockState(skyPosition).getBlock == SkylandsMod.skylands.blockCloud)
+      if (worldSkylands.isReplaceable(skyPosition) || worldSkylands.isTerrainBlock(skyPosition) || worldSkylands.getBlockState(skyPosition).getBlock == SkylandsMod.skylands.blockCloud)
         worldSkylands.setBlockState(skyPosition, blockState)
     }
   }
@@ -104,7 +94,6 @@ class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends Structu
   }
 
   override def update(): Unit = {
-    //if (progress == 0) SkylandsMod.skylands.skylandsDimensionType.setLoadSpawn(true)
     val xOffset = sineLayerAmplitudes.zip(sineLayerOffset).zipWithIndex.map {
       case ((ampl, offset), index) =>
         //println((ampl, offset, index))
@@ -120,7 +109,6 @@ class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends Structu
 
     if (destinationPosition.getY > 350) {
       world.setBlockState(position, SkylandsMod.skylands.blockBeanStem.getDefaultState)
-      //SkylandsMod.skylands.skylandsDimensionType.setLoadSpawn(false)
     }
 
     drawLayer(destinationPosition)
