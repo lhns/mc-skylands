@@ -17,7 +17,7 @@ class TileEntityBeanPlant extends TileEntity with ITickable {
       case world: WorldServer =>
         SkylandsMod.skylands.keepSkylandsLoaded()
 
-        if (world.rand.nextInt(4) == 0)
+        if (world.rand.nextInt(3) == 0)
           beanstalkGenerator.getOrElse {
             val result = new BeanstalkGenerator(world, pos)
             beanstalkGenerator = Some(result)

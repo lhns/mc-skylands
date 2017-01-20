@@ -38,6 +38,8 @@ class Skylands(configFile: File) {
   GameRegistry.register(blockCloud.setRegistryName("cloud"))
   GameRegistry.register(new ItemBlock(blockCloud).setRegistryName(blockCloud.getRegistryName))
 
+  val skylandsOverlap = 15
+
   val skylandsDimensionType: DimensionType = DimensionType.register("Skylands", "sky", config.dimensionId, classOf[WorldProviderSkylands], false)
   DimensionManager.registerDimension(config.dimensionId, skylandsDimensionType)
 
