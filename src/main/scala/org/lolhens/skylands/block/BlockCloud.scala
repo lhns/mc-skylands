@@ -24,11 +24,9 @@ class BlockCloud extends Block(MaterialCloud) {
   setHardness(1)
   setResistance(2)
   setSoundType(SoundType.SNOW)
+  setLightLevel(0.1f)
 
-
-  override def createBlockState(): BlockStateContainer = new BlockStateContainer(this) {
-
-  }
+  override def createBlockState(): BlockStateContainer = new BlockStateContainer(this)
 
   @SideOnly(Side.CLIENT)
   override def getBlockLayer: BlockRenderLayer = BlockRenderLayer.TRANSLUCENT
@@ -69,7 +67,7 @@ class BlockCloud extends Block(MaterialCloud) {
         x <- -radius to radius;
         z <- -radius to radius
       ) yield position.add(x, 0, z)
-    }.exists(world.getBlockState(_).getBlock == SkylandsMod.skylands.blockCloud)
+    }.exists(world.getBlockState(_).getBlock == SkylandsMod.skylands.blockBeanStem)
 
     entity match {
       case player: EntityPlayerMP if !player.world.isRemote =>
@@ -95,8 +93,6 @@ object BlockCloud {
 
   object MaterialCloud extends Material(MapColor.CLOTH) {
     override def getCanBurn: Boolean = true
-
-    override def isReplaceable: Boolean = true
   }
 
 }

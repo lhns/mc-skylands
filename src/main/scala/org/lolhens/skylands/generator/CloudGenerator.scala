@@ -3,17 +3,20 @@ package org.lolhens.skylands.generator
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.WorldServer
 import org.lolhens.skylands.SkylandsMod
-import org.lolhens.skylands.world.BlockArray
 import org.lolhens.skylands.enrich.RichBlockPos._
+import org.lolhens.skylands.world.BlockArray
+
 import scala.util.Random
 
 /**
   * Created by pierr on 20.01.2017.
   */
 class CloudGenerator(world: WorldServer, position: BlockPos) extends StructureGenerator(world, position) {
-  private def worldSkylands = world.getMinecraftServer.worldServerForDimension(SkylandsMod.skylands.skylandsDimensionType.getId)
-
-  val syncedWorld: BlockArray = BlockArray.syncVertical(world, worldSkylands, 15)
+  val syncedWorld: BlockArray = BlockArray.syncVertical(
+    world,
+    world.getMinecraftServer.worldServerForDimension(SkylandsMod.skylands.skylandsDimensionType.getId),
+    15
+  )
 
   val random = new Random(world.getSeed + position.getX + position.getZ * position.getY)
 

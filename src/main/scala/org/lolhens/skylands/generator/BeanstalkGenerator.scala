@@ -44,36 +44,32 @@ class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends Structu
     val rdLength = Math.sqrt(Seq(rdDirection.getX * rdDirection.getX, rdDirection.getY * rdDirection.getY, rdDirection.getZ * rdDirection.getZ).max)
     val rdDirectionNorm = new BlockPos((rdDirection.getX / rdLength).round, 1, (rdDirection.getZ / rdLength).round)
 
-    //println(lastBlockPos)
-
     lastBlockPos = lastBlockPos.add(rdDirectionNorm)
 
     drawBlock(lastBlockPos, SkylandsMod.skylands.blockBeanStem.getDefaultState.withProperty(BlockBeanStem.isCenter, Boolean.box(true)))
 
     def recursiveFunction(currentPos: BlockPos, steps: Int = 0): Unit = {
-      if (steps > 500) return
+      if (steps > 600) return
       val size = math.log1p(steps * 1.4).toInt
 
-      for (x <- -size to size; z <- -size to size) {
-        if (new BlockPos(x, 0, z).inSphere(size + 0.1)) {
+      for (x <- -size to size; z <- -size to size)
+        if (new BlockPos(x, 0, z).inSphere(size + 0.1))
           drawBlock(currentPos.add(x, 0, z), SkylandsMod.skylands.blockBeanStem.getDefaultState)
-        }
-      }
 
       if (currentPos.getY >= position.getY) {
         for (x <- -1 to 1; z <- -1 to 1) {
           val newPos = currentPos.add(x, -1, z)
           val bs = syncedWorld.getBlockState(newPos)
-          if (bs.getBlock == SkylandsMod.skylands.blockBeanStem && bs.getValue(BlockBeanStem.isCenter) && newPos != currentPos) {
+          if (bs.getBlock == SkylandsMod.skylands.blockBeanStem && bs.getValue(BlockBeanStem.isCenter) && newPos != currentPos)
             recursiveFunction(newPos, steps + 1)
-          }
         }
       }
     }
 
     recursiveFunction(lastBlockPos)
 
-    if (lastBlockPos.getY >= 245 && lastBlockPos.getY <= 255) new CloudGenerator(world, lastBlockPos)
+    if (lastBlockPos.getY >= 245 && lastBlockPos.getY <= 255)
+      new CloudGenerator(world, lastBlockPos)
   }
 
   override def update(): Unit = {
@@ -90,9 +86,8 @@ class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends Structu
 
     val destinationPosition = position.add(xOffset, progress + 3, zOffset)
 
-    if (destinationPosition.getY > 350) {
+    if (destinationPosition.getY > 430)
       world.setBlockState(position, SkylandsMod.skylands.blockBeanStem.getDefaultState)
-    }
 
     drawLayer(destinationPosition)
 

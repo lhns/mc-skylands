@@ -5,6 +5,7 @@ import net.minecraft.block.state.IBlockState
 import net.minecraft.init.Blocks
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.{IBlockAccess, World}
+import org.lolhens.skylands.SkylandsMod
 
 /**
   * Created by pierr on 20.01.2017.
@@ -21,7 +22,7 @@ trait BlockArray {
     blockState.getMaterial.isReplaceable ||
       get(position, (blockAccess, pos) => blockState.getBlock.isLeaves(blockState, blockAccess, pos)) ||
       Seq(Material.AIR, Material.LEAVES).contains(blockState.getMaterial) ||
-      Seq(Blocks.SAPLING, Blocks.VINE).contains(blockState.getBlock)
+      Seq(Blocks.SAPLING, Blocks.VINE, SkylandsMod.skylands.blockCloud).contains(blockState.getBlock)
   }
 
   def isTerrainBlock(position: BlockPos): Boolean =

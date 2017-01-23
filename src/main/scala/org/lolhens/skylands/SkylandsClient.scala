@@ -10,7 +10,6 @@ import net.minecraftforge.client.model.ModelLoader
   * Created by pierr on 02.01.2017.
   */
 class SkylandsClient(configFile: File) extends Skylands(configFile) {
-  registerModel(Item.getItemFromBlock(blockPortal), 0)
   registerModel(Item.getItemFromBlock(blockBeanStem), 0)
   registerModel(Item.getItemFromBlock(blockBean), 0)
   registerModel(Item.getItemFromBlock(blockCloud), 0)

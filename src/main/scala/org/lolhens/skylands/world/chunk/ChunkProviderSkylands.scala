@@ -8,7 +8,7 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.world.biome.Biome
 import net.minecraft.world.biome.Biome.SpawnListEntry
 import net.minecraft.world.chunk.{Chunk, ChunkPrimer, IChunkGenerator}
-import net.minecraft.world.{World, WorldEntitySpawner}
+import net.minecraft.world.{EnumSkyBlock, World}
 
 import scala.collection.JavaConversions._
 import scala.util.Random
@@ -17,7 +17,7 @@ import scala.util.Random
   * Created by pierr on 01.01.2017.
   */
 class ChunkProviderSkylands(world: World) extends IChunkGenerator {
-  private val random = new Random(world.getSeed + 0x4f9939f508L)
+  private val random = new Random(world.getSeed * 0x4f9939f508L)
   private val mobs = List(new Biome.SpawnListEntry(classOf[EntityChicken], 100, 1, 4))
   private val terrainGenerator = new SkylandsTerrainGenerator(world, random)
 
@@ -36,18 +36,34 @@ class ChunkProviderSkylands(world: World) extends IChunkGenerator {
 
   override def provideChunk(chunkX: Int, chunkZ: Int): Chunk = {
     val chunkPrimer = new ChunkPrimer()
+    val offsetPrimer = new OffsetChunkPrimer(chunkPrimer, 64)
 
-    //val biomesForGeneration = world.getBiomeProvider.getBiomesForGeneration(Array[Biome](), chunkX * 16, chunkZ * 16, 16, 16)
-
-    terrainGenerator.generate(chunkX, chunkZ, chunkPrimer)
+    terrainGenerator.generate(chunkX, chunkZ, offsetPrimer)
 
     val chunk = new Chunk(world, chunkPrimer, chunkX, chunkZ)
 
-    /*val biomeArray = chunk.getBiomeArray
-    for (i <- 0 until biomeArray.length)
-      biomeArray(i) = Biome.getIdForBiome(biomesForGeneration(i)).toByte*/
+    //chunk.setLightPopulated(false)
 
     chunk.generateSkylightMap()
+
+    /*for (
+      x <- 0 until 16;
+      y <- 0 until 256;
+      z <- 0 until 16
+    ) {
+      val pos = new BlockPos(x, y, z)
+      /*val enumSkyBlock: EnumSkyBlock =
+        if (chunk.getBlockState(pos).getBlock == Blocks.AIR)
+        EnumSkyBlock.SKY
+      else
+      EnumSkyBlock.BLOCK*/
+      //if (chunk.canSeeSky(pos))
+        chunk.setLightFor(EnumSkyBlock.SKY, pos, 15)
+      //else
+        //chunk.setLightFor(EnumSkyBlock.SKY, pos, 0)
+    }*/
+
+
 
     chunk
   }
@@ -57,12 +73,9 @@ class ChunkProviderSkylands(world: World) extends IChunkGenerator {
 
     val blockPos = new BlockPos(x, 0, z)
     val biome = world.getBiome(blockPos.add(16, 0, 16))
-    //System.out.print(biome.getBiomeName)
 
     terrainGenerator.populate(chunkX, chunkZ)
 
     //biome.decorate(worldObj, random.self, blockPos)
-
-    WorldEntitySpawner.performWorldGenSpawning(world, biome, x + 8, x + 8, 16, 16, random.self)
   }
 }
