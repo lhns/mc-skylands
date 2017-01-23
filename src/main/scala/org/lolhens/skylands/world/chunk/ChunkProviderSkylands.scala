@@ -5,10 +5,12 @@ import java.util
 import net.minecraft.entity.EnumCreatureType
 import net.minecraft.entity.passive.EntityChicken
 import net.minecraft.util.math.BlockPos
+import net.minecraft.world.World
 import net.minecraft.world.biome.Biome
 import net.minecraft.world.biome.Biome.SpawnListEntry
+import net.minecraft.world.chunk.storage.ExtendedBlockStorage
 import net.minecraft.world.chunk.{Chunk, ChunkPrimer, IChunkGenerator}
-import net.minecraft.world.{EnumSkyBlock, World}
+import org.lolhens.skylands.enrich.RichChunk._
 
 import scala.collection.JavaConversions._
 import scala.util.Random
@@ -44,7 +46,7 @@ class ChunkProviderSkylands(world: World) extends IChunkGenerator {
 
     //chunk.setLightPopulated(false)
 
-    chunk.generateSkylightMap()
+    chunk.generateSkylightMap2()
 
     /*for (
       x <- 0 until 16;

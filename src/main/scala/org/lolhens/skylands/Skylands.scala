@@ -25,6 +25,8 @@ import org.lolhens.skylands.block.{BlockBean, BlockBeanStem, BlockCloud}
 import org.lolhens.skylands.feature.{FallIntoOverworld, FeatherGliding}
 import org.lolhens.skylands.tileentities.TileEntityBeanPlant
 import org.lolhens.skylands.world.WorldProviderSkylands
+import org.lolhens.skylands.enrich.RichRenderGlobal._
+import org.lolhens.skylands.enrich.RichChunk._
 
 import scala.collection.JavaConversions._
 
@@ -113,52 +115,6 @@ class Skylands(configFile: File) {
     }
   }
 
-  lazy val setLightUpdatesField: Field = {
-    val result = classOf[RenderGlobal].getDeclaredField("setLightUpdates")
-    result.setAccessible(true)
-    result
-  }
-
-  lazy val renderDispatcherField: Field = {
-    val result = classOf[RenderGlobal].getDeclaredField("renderDispatcher")
-    result.setAccessible(true)
-    result
-  }
-
-  object markBlocksForUpdate {
-    private lazy val markBlocksForUpdateMethod: Method = {
-      val result = classOf[RenderGlobal].getDeclaredMethod("markBlocksForUpdate", toObjectClassSeq((0 until 6).map(_ => Integer.TYPE) :+ java.lang.Boolean.TYPE: _*): _*)
-      result.setAccessible(true)
-      result
-    }
-
-    def apply(renderGlobal: RenderGlobal, minX: Int, minY: Int, minZ: Int, maxX: Int, maxY: Int, maxZ: Int, update: Boolean): Unit =
-      markBlocksForUpdateMethod.invoke(renderGlobal, toObjectSeq(minX, minY, minZ, maxX, maxY, maxZ, update): _*)
-  }
-
-  object relightBlock {
-    private lazy val relightBlockMethod: Method = {
-      val result = classOf[Chunk].getDeclaredMethod("relightBlock", toObjectClassSeq((0 until 3).map(_ => classOf[Int]): _*): _*)
-      result.setAccessible(true)
-      result
-    }
-
-    def apply(chunk: Chunk, pos: BlockPos): Unit =
-      relightBlockMethod.invoke(chunk, toObjectSeq(pos.getX & 15, pos.getY, pos.getZ & 15): _*)
-  }
-
-  def toObjectClassSeq(seq: Class[_]*): Seq[Class[_]] = seq.map {
-    case boolean if boolean == classOf[Boolean] => java.lang.Boolean.TYPE
-    case int if int == classOf[Int] => Integer.TYPE
-    case clazz => clazz
-  }
-
-  def toObjectSeq(seq: Any*): Seq[Object] = seq.map {
-    case boolean: Boolean => Boolean.box(boolean)
-    case int: Int => Int.box(int)
-    case value: AnyRef => value
-  }
-
   var lightUpdates: Set[BlockPos] = Set.empty
   val lightUpdatesLock = new Object()
 
@@ -168,19 +124,22 @@ class Skylands(configFile: File) {
       val minecraft = Minecraft.getMinecraft
       if (minecraft.world != null) {
         if (!minecraft.isGamePaused) {
-          val setLightUpdates = setLightUpdatesField.get(minecraft.renderGlobal).asInstanceOf[java.util.Set[BlockPos]].toSet
-          val renderDispatcher = renderDispatcherField.get(minecraft.renderGlobal).asInstanceOf[ChunkRenderDispatcher]
+          val setLightUpdates = minecraft.renderGlobal.setLightUpdates.toSet
+          val renderDispatcher = minecraft.renderGlobal.renderDispatcher
           if (setLightUpdates.nonEmpty && !renderDispatcher.hasNoFreeRenderBuilders) {
+            //if (minecraft.renderGlobal.chunksToUpdate.isEmpty)
+              //println("Processing light updates")
+
             //lightUpdatesLock.synchronized(this.lightUpdates = setLightUpdates)
             //val lightUpdates = setLightUpdates.groupBy(_.getY).map(e => e._1 -> e._2.size)
             //println(lightUpdates.values.sum + "   " + lightUpdates.toList.sortBy(_._1).map(e => s"${e._1}:${e._2}").mkString(" "))
-            setLightUpdates /*.take(10)*/ .foreach { pos =>
+            //setLightUpdates /*.take(10)*/ .foreach { pos =>
               //if (minecraft.world.getBlockState(pos).getBlock == Blocks.AIR)
-                //minecraft.world.setBlockState(pos, Blocks.AIR.getDefaultState)
+                //minecraft.world.setBlockState(pos, Blocks.DIAMOND_BLOCK.getDefaultState, 2)
               //val chunk = minecraft.world.getChunkFromBlockCoords(pos)
               //relightBlock(chunk, pos)
               //markBlocksForUpdate(minecraft.renderGlobal, pos.getX - 1, pos.getY - 1, pos.getZ - 1, pos.getX + 1, pos.getY + 1, pos.getZ + 1, false)
-            }
+            //}
           }
         }
       }
@@ -198,8 +157,8 @@ class Skylands(configFile: File) {
             if (minecraft.world.getBlockState(pos).getBlock == Blocks.AIR)
               minecraft.world.setBlockState(pos, Blocks.AIR.getDefaultState)
             val chunk = minecraft.world.getChunkFromBlockCoords(pos)
-            relightBlock(chunk, pos)
-            markBlocksForUpdate(minecraft.renderGlobal, pos.getX - 1, pos.getY - 1, pos.getZ - 1, pos.getX + 1, pos.getY + 1, pos.getZ + 1, false)
+            chunk.relightBlock(pos.getX & 15, pos.getY, pos.getZ & 15)
+            minecraft.renderGlobal.markBlocksForUpdate(pos.getX - 1, pos.getY - 1, pos.getZ - 1, pos.getX + 1, pos.getY + 1, pos.getZ + 1, false)
           }
           lightUpdates = Set.empty
         }
