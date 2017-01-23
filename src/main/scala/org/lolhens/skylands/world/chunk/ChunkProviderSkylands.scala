@@ -46,7 +46,7 @@ class ChunkProviderSkylands(world: World) extends IChunkGenerator {
 
     //chunk.setLightPopulated(false)
 
-    chunk.generateSkylightMap2()
+    chunk.generateSkylightMap3()
 
     /*for (
       x <- 0 until 16;

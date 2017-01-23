@@ -97,6 +97,57 @@ class RichChunk(val self: Chunk) extends AnyVal {
 
     isModified = true
   }
+
+  def generateSkylightMap3(): Unit = {
+    val topY = self.getTopFilledSegment
+    heightMapMinimum = Integer.MAX_VALUE
+
+    val precipitationHeightMap = self.precipitationHeightMap
+    val heightMap = self.heightMap
+    val storageArrays = self.storageArrays
+
+    for (x <- 0 until 16;
+         z <- 0 until 16) {
+      precipitationHeightMap(x + (z << 4)) = -999
+
+      def loop1(): Unit =
+        for (y <- topY + 16 until 0 by -1
+             if getBlockLightOpacity(x, y - 1, z) != 0) {
+          heightMap(z << 4 | x) = y
+
+          if (y < heightMapMinimum) heightMapMinimum = y
+
+          return
+        }
+
+      loop1()
+
+      if (!self.getWorld.provider.hasNoSky) {
+        var lightValue = 15
+
+        for (y <- topY + 16 - 1 to 0 by -1) {
+          val opacity = {
+            val opacity = getBlockLightOpacity(x, y, z)
+            if (opacity == 0 && lightValue != 15) -1 else opacity
+          }
+
+          lightValue = Math.max(Math.min(lightValue - opacity, 15), 0)
+
+          if (lightValue > 0) {
+            val storage: ExtendedBlockStorage = storageArrays(y >> 4)
+
+            if (storage != Chunk.NULL_BLOCK_STORAGE) {
+              storage.setExtSkylightValue(x, y & 15, z, lightValue)
+              self.getWorld.notifyLightSet(new BlockPos((self.xPosition << 4) + x, y, (self.zPosition << 4) + z))
+            }
+          }
+
+        }
+      }
+    }
+
+    isModified = true
+  }
 }
 
 object RichChunk {
