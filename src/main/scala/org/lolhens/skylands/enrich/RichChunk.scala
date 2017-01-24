@@ -128,7 +128,7 @@ class RichChunk(val self: Chunk) extends AnyVal {
         for (y <- topY + 16 - 1 to 0 by -1) {
           val opacity = {
             val opacity = getBlockLightOpacity(x, y, z)
-            if (opacity == 0 && lightValue != 15) -1 else opacity
+            if (opacity == 0 && lightValue != 15) 1 else opacity
           }
 
           lightValue = Math.max(Math.min(lightValue - opacity, 15), 0)

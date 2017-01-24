@@ -101,13 +101,11 @@ class Skylands(configFile: File) {
 
   private var _keepSkylandsLoaded = false
 
-  private val m = classOf[RenderGlobal].getDeclaredField("chunksToUpdate")
-
   @SubscribeEvent
   def onWorldTick(event: TickEvent.WorldTickEvent): Unit = {
     if (event.world.provider.getDimensionType == skylandsDimensionType) {
-      m.setAccessible(true)
-      m.set(Minecraft.getMinecraft.renderGlobal, Sets.newLinkedHashSet[RenderChunk])
+
+      //Minecraft.getMinecraft.renderGlobal.chunksToUpdate = Sets.newLinkedHashSet[RenderChunk]()
       if (_keepSkylandsLoaded)
         _keepSkylandsLoaded = false
       else if (skylandsDimensionType.shouldLoadSpawn())
@@ -122,9 +120,9 @@ class Skylands(configFile: File) {
   def onClientTick(event: TickEvent.ClientTickEvent): Unit = {
     if (event.phase == TickEvent.Phase.START) {
       val minecraft = Minecraft.getMinecraft
-      if (minecraft.world != null) {
+      if (Option(minecraft.world).isDefined) {
         if (!minecraft.isGamePaused) {
-          val setLightUpdates = minecraft.renderGlobal.setLightUpdates.toSet
+          /*val setLightUpdates = minecraft.renderGlobal.setLightUpdates.toSet
           val renderDispatcher = minecraft.renderGlobal.renderDispatcher
           if (setLightUpdates.nonEmpty && !renderDispatcher.hasNoFreeRenderBuilders) {
             //if (minecraft.renderGlobal.chunksToUpdate.isEmpty)
@@ -140,7 +138,7 @@ class Skylands(configFile: File) {
               //relightBlock(chunk, pos)
               //markBlocksForUpdate(minecraft.renderGlobal, pos.getX - 1, pos.getY - 1, pos.getZ - 1, pos.getX + 1, pos.getY + 1, pos.getZ + 1, false)
             //}
-          }
+          }*/
         }
       }
     }
@@ -151,7 +149,7 @@ class Skylands(configFile: File) {
     if (event.phase == TickEvent.Phase.END) {
       val minecraft = Minecraft.getMinecraft
       if (minecraft.world != null) {
-        lightUpdatesLock.synchronized {
+        /*lightUpdatesLock.synchronized {
           if (lightUpdates.nonEmpty) println(lightUpdates.size)
           lightUpdates /*.take(10)*/ .foreach { pos =>
             if (minecraft.world.getBlockState(pos).getBlock == Blocks.AIR)
@@ -161,7 +159,7 @@ class Skylands(configFile: File) {
             minecraft.renderGlobal.markBlocksForUpdate(pos.getX - 1, pos.getY - 1, pos.getZ - 1, pos.getX + 1, pos.getY + 1, pos.getZ + 1, false)
           }
           lightUpdates = Set.empty
-        }
+        }*/
       }
     }
   }

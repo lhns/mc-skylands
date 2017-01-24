@@ -20,4 +20,14 @@ class WorldProviderSkylands extends WorldProvider {
   override def getWorldTime: Long = 6000
 
   override def getCloudHeight: Float = -20
+
+  override def updateWeather(): Unit = {
+    super.updateWeather()
+    clearWeather()
+  }
+
+  private def clearWeather(): Unit = {
+    world.rainingStrength = 0
+    world.thunderingStrength = 0
+  }
 }
