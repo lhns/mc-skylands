@@ -118,7 +118,7 @@ class Skylands(configFile: File) {
 
   @SubscribeEvent
   def onClientTick(event: TickEvent.ClientTickEvent): Unit = {
-    if (event.phase == TickEvent.Phase.START) {
+    /*if (event.phase == TickEvent.Phase.START) {
       val minecraft = Minecraft.getMinecraft
       if (Option(minecraft.world).isDefined) {
         if (!minecraft.isGamePaused) {
@@ -141,12 +141,12 @@ class Skylands(configFile: File) {
           }*/
         }
       }
-    }
+    }*/
   }
 
   @SubscribeEvent
   def onServerTick(event: TickEvent.ServerTickEvent): Unit = {
-    if (event.phase == TickEvent.Phase.END) {
+    /*if (event.phase == TickEvent.Phase.END) {
       val minecraft = Minecraft.getMinecraft
       if (minecraft.world != null) {
         /*lightUpdatesLock.synchronized {
@@ -161,7 +161,7 @@ class Skylands(configFile: File) {
           lightUpdates = Set.empty
         }*/
       }
-    }
+    }*/
   }
 
   @SubscribeEvent
