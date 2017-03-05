@@ -12,7 +12,7 @@ import org.lolhens.skylands.proxy.CommonProxy
 object SkylandsMod {
   final val ModId = "skylandsmod"
 
-  final val Version = "0.0.0"
+  final val Version = "0.1.0"
 
 
   @SidedProxy(clientSide = "org.lolhens.skylands.proxy.ClientProxy", serverSide = "org.lolhens.skylands.proxy.CommonProxy")

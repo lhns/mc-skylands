@@ -1,0 +1,22 @@
+[
+  {
+    "modid": "skylandsmod",
+    "name": "Skylands Mod",
+    "description": "Adds back the skylands from beta 1.6 as a seperate dimension.",
+    "version": "${version}",
+    "credits": "LolHens, th3falc0n",
+    "logoFile": "assets/skylandsmod/logo.png",
+    "mcversion": "${mcversion}",
+    "url": "https://github.com/LolHens/SkylandsMod",
+    "updateUrl": "",
+    "authorList": [
+      "LolHens",
+      "th3falc0n"
+    ],
+    "parent": "",
+    "screenshots": [],
+    "dependencies": [
+      "Forge"
+    ]
+  }
+]
