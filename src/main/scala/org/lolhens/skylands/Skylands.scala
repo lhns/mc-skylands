@@ -1,23 +1,17 @@
 package org.lolhens.skylands
 
 import java.io.File
-import java.lang.reflect.{Field, Method}
 
-import com.google.common.collect.Sets
-import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.RenderGlobal
-import net.minecraft.client.renderer.chunk.{ChunkRenderDispatcher, RenderChunk}
+import net.minecraft.block.Block
 import net.minecraft.entity.player.EntityPlayerMP
-import net.minecraft.init.Blocks
 import net.minecraft.item.{Item, ItemBlock}
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.DimensionType
-import net.minecraft.world.chunk.Chunk
 import net.minecraft.world.storage.loot.conditions.LootCondition
 import net.minecraft.world.storage.loot.functions.LootFunction
 import net.minecraft.world.storage.loot.{LootEntry, LootEntryItem, LootPool, RandomValueRange}
 import net.minecraftforge.common.{DimensionManager, MinecraftForge}
-import net.minecraftforge.event.LootTableLoadEvent
+import net.minecraftforge.event.{LootTableLoadEvent, RegistryEvent}
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.common.registry.GameRegistry
@@ -25,10 +19,6 @@ import org.lolhens.skylands.block.{BlockBean, BlockBeanStem, BlockCloud}
 import org.lolhens.skylands.feature.{FallIntoOverworld, FeatherGliding}
 import org.lolhens.skylands.tileentities.TileEntityBeanPlant
 import org.lolhens.skylands.world.WorldProviderSkylands
-import org.lolhens.skylands.enrich.RichRenderGlobal._
-import org.lolhens.skylands.enrich.RichChunk._
-
-import scala.collection.JavaConversions._
 
 /**
   * Created by pierr on 02.01.2017.
@@ -36,18 +26,26 @@ import scala.collection.JavaConversions._
 class Skylands(configFile: File) {
   val config = new Config(configFile)
 
-  val blockBeanStem = new BlockBeanStem()
-  GameRegistry.register(blockBeanStem.setRegistryName("beanstem"))
-  GameRegistry.register(new ItemBlock(blockBeanStem).setRegistryName(blockBeanStem.getRegistryName))
+  val blockBeanStem = new BlockBeanStem().setRegistryName("beanstem")
+  val blockBean = new BlockBean().setRegistryName("bean")
+  val blockCloud = new BlockCloud().setRegistryName("cloud")
 
-  val blockBean = new BlockBean()
-  GameRegistry.register(blockBean.setRegistryName("bean"))
-  GameRegistry.register(new ItemBlock(blockBean).setRegistryName(blockBean.getRegistryName))
+  val blocks = Seq(blockBeanStem, blockBean, blockCloud)
+
   GameRegistry.registerTileEntity(classOf[TileEntityBeanPlant], "bean_tile_entity")
 
-  val blockCloud = new BlockCloud()
-  GameRegistry.register(blockCloud.setRegistryName("cloud"))
-  GameRegistry.register(new ItemBlock(blockCloud).setRegistryName(blockCloud.getRegistryName))
+  @SubscribeEvent
+  def registerBlocks(event: RegistryEvent.Register[Block]): Unit = {
+    println("loading-------------------------------------------------")
+    event.getRegistry.registerAll(blocks: _*)
+  }
+
+  @SubscribeEvent
+  def registerItems(event: RegistryEvent.Register[Item]): Unit = {
+    event.getRegistry.registerAll(blocks.map { block =>
+      new ItemBlock(block).setRegistryName(block.getRegistryName)
+    }: _*)
+  }
 
   val skylandsOverlap = 15
 

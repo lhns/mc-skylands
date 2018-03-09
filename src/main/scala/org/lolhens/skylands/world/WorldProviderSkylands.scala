@@ -1,6 +1,6 @@
 package org.lolhens.skylands.world
 
-import net.minecraft.world.chunk.IChunkGenerator
+import net.minecraft.world.gen.IChunkGenerator
 import net.minecraft.world.{DimensionType, WorldProvider}
 import org.lolhens.skylands.SkylandsMod
 import org.lolhens.skylands.world.chunk.ChunkProviderSkylands

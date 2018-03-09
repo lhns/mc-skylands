@@ -1,9 +1,10 @@
 buildscript {
     repositories {
-        maven { url = "http://lolhens.no-ip.org/artifactory/maven-public/" }
+        jcenter()
+        maven { url = "https://artifactory.lolhens.de/artifactory/maven-public/" }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
     }
 }
 
@@ -11,6 +12,11 @@ apply plugin: 'net.minecraftforge.gradle.forge'
 apply plugin: 'scala'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+
+sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+compileJava {
+    sourceCompatibility = targetCompatibility = '1.8'
+}
 
 minecraft {
     version = version_minecraft + "-" + version_forge

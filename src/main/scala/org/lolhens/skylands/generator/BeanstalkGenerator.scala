@@ -14,7 +14,7 @@ import org.lolhens.skylands.world.BlockArray
 class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends StructureGenerator(world, position) {
   private val syncedWorld: BlockArray = BlockArray.syncVertical(
     world,
-    world.getMinecraftServer.worldServerForDimension(SkylandsMod.skylands.skylandsDimensionType.getId),
+    world.getMinecraftServer.getWorld(SkylandsMod.skylands.skylandsDimensionType.getId),
     SkylandsMod.skylands.skylandsOverlap
   )
 

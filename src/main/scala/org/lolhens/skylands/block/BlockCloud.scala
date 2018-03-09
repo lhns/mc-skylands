@@ -49,7 +49,7 @@ class BlockCloud extends Block(MaterialCloud) {
       isHidden(side.rotateY().rotateY().rotateY())
   }
 
-  override def getCollisionBoundingBox(blockState: IBlockState, worldIn: World, pos: BlockPos): AxisAlignedBB = Block.NULL_AABB
+  override def getCollisionBoundingBox(blockState: IBlockState, worldIn: IBlockAccess, pos: BlockPos): AxisAlignedBB = Block.NULL_AABB
 
   override def onEntityCollidedWithBlock(world: World, position: BlockPos, state: IBlockState, entity: Entity): Unit = {
     if (entity.motionY < 0) entity.motionY *= 0.5 //entity.motionY = Math.max(entity.motionY, -0.3)
@@ -80,7 +80,7 @@ class BlockCloud extends Block(MaterialCloud) {
             None
 
         for ((dimension, position) <- teleportTarget) {
-          val teleporter: Teleporter = new SimpleTeleporter(player.getServer.worldServerForDimension(dimension.getId), Some(position))
+          val teleporter: Teleporter = new SimpleTeleporter(player.getServer.getWorld(dimension.getId), Some(position))
           player.getServer.getPlayerList.transferPlayerToDimension(player, dimension.getId, teleporter)
         }
 

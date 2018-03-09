@@ -8,11 +8,10 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
 import net.minecraft.world.biome.Biome
 import net.minecraft.world.biome.Biome.SpawnListEntry
-import net.minecraft.world.chunk.storage.ExtendedBlockStorage
-import net.minecraft.world.chunk.{Chunk, ChunkPrimer, IChunkGenerator}
-import org.lolhens.skylands.enrich.RichChunk._
+import net.minecraft.world.chunk.{Chunk, ChunkPrimer}
+import net.minecraft.world.gen.IChunkGenerator
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.util.Random
 
 /**
@@ -23,20 +22,21 @@ class ChunkProviderSkylands(world: World) extends IChunkGenerator {
   private val mobs = List(new Biome.SpawnListEntry(classOf[EntityChicken], 100, 1, 4))
   private val terrainGenerator = new SkylandsTerrainGenerator(world, random)
 
-  override def getPossibleCreatures(creatureType: EnumCreatureType, pos: BlockPos): util.List[SpawnListEntry] = creatureType match {
-    case EnumCreatureType.CREATURE => mobs
-    case EnumCreatureType.AMBIENT => Nil
-    case EnumCreatureType.MONSTER => Nil
-    case EnumCreatureType.WATER_CREATURE => Nil
-  }
+  override def getPossibleCreatures(creatureType: EnumCreatureType, pos: BlockPos): util.List[SpawnListEntry] =
+    (creatureType match {
+      case EnumCreatureType.CREATURE => mobs
+      case EnumCreatureType.AMBIENT => Nil
+      case EnumCreatureType.MONSTER => Nil
+      case EnumCreatureType.WATER_CREATURE => Nil
+    }).toBuffer.asJava
 
   override def recreateStructures(chunkIn: Chunk, x: Int, z: Int): Unit = ()
 
   override def generateStructures(chunkIn: Chunk, x: Int, z: Int): Boolean = false
 
-  override def getStrongholdGen(worldIn: World, structureName: String, position: BlockPos): BlockPos = null
+  //override def getStrongholdGen(worldIn: World, structureName: String, position: BlockPos): BlockPos = null
 
-  override def provideChunk(chunkX: Int, chunkZ: Int): Chunk = {
+  override def generateChunk(chunkX: Int, chunkZ: Int): Chunk = {
     val chunkPrimer = new ChunkPrimer()
     val offsetPrimer = new OffsetChunkPrimer(chunkPrimer, 64)
 
@@ -81,4 +81,8 @@ class ChunkProviderSkylands(world: World) extends IChunkGenerator {
 
     //biome.decorate(worldObj, random.self, blockPos)
   }
+
+  override def isInsideStructure(world: World, s: String, blockPos: BlockPos): Boolean = false
+
+  override def getNearestStructurePos(world: World, s: String, blockPos: BlockPos, b: Boolean): BlockPos = null
 }

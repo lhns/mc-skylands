@@ -14,7 +14,7 @@ import scala.util.Random
 class CloudGenerator(world: WorldServer, position: BlockPos) extends StructureGenerator(world, position) {
   val syncedWorld: BlockArray = BlockArray.syncVertical(
     world,
-    world.getMinecraftServer.worldServerForDimension(SkylandsMod.skylands.skylandsDimensionType.getId),
+    world.getMinecraftServer.getWorld(SkylandsMod.skylands.skylandsDimensionType.getId),
     15
   )
 

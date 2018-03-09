@@ -39,7 +39,7 @@ class RichChunk(val self: Chunk) extends AnyVal {
   def relightBlock(x: Int, y: Int, z: Int): Unit =
     relightBlockMethod.invoke(self, ReflectHelper.toObjectSeq(x, y, z): _*)
 
-  def generateSkylightMap2(): Unit = {
+  /*def generateSkylightMap2(): Unit = {
     val i = self.getTopFilledSegment
     heightMapMinimum = Integer.MAX_VALUE
 
@@ -147,7 +147,7 @@ class RichChunk(val self: Chunk) extends AnyVal {
     }
 
     isModified = true
-  }
+  }*/
 }
 
 object RichChunk {

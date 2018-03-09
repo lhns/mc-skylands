@@ -32,7 +32,7 @@ object FallIntoOverworld {
         None
 
     for ((dimensionId, position) <- teleportTarget) {
-      val teleporter: Teleporter = new SimpleTeleporter(player.getServer.worldServerForDimension(dimensionId), Some(position))
+      val teleporter: Teleporter = new SimpleTeleporter(player.getServer.getWorld(dimensionId), Some(position))
       player.getServer.getPlayerList.transferPlayerToDimension(player, dimensionId, teleporter)
     }
   }
