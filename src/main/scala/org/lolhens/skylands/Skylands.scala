@@ -10,7 +10,8 @@ import net.minecraft.world.DimensionType
 import net.minecraft.world.storage.loot.conditions.LootCondition
 import net.minecraft.world.storage.loot.functions.LootFunction
 import net.minecraft.world.storage.loot.{LootEntry, LootEntryItem, LootPool, RandomValueRange}
-import net.minecraftforge.common.{DimensionManager, MinecraftForge}
+import net.minecraftforge.client.event.ModelRegistryEvent
+import net.minecraftforge.common.DimensionManager
 import net.minecraftforge.event.{LootTableLoadEvent, RegistryEvent}
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
@@ -30,13 +31,12 @@ class Skylands(configFile: File) {
   val blockBean = new BlockBean().setRegistryName("bean")
   val blockCloud = new BlockCloud().setRegistryName("cloud")
 
-  val blocks = Seq(blockBeanStem, blockBean, blockCloud)
+  val blocks: Seq[Block] = Seq(blockBeanStem, blockBean, blockCloud)
 
   GameRegistry.registerTileEntity(classOf[TileEntityBeanPlant], "bean_tile_entity")
 
   @SubscribeEvent
   def registerBlocks(event: RegistryEvent.Register[Block]): Unit = {
-    println("loading-------------------------------------------------")
     event.getRegistry.registerAll(blocks: _*)
   }
 
@@ -47,14 +47,22 @@ class Skylands(configFile: File) {
     }: _*)
   }
 
+  @SubscribeEvent
+  def registerModels(event: ModelRegistryEvent): Unit = ()
+
   val skylandsOverlap = 15
 
-  val skylandsDimensionType: DimensionType = DimensionType.register("Skylands", "sky", config.dimensionId, classOf[WorldProviderSkylands], false)
+  val skylandsDimensionType: DimensionType = DimensionType.register(
+    "Skylands",
+    "sky",
+    config.dimensionId,
+    classOf[WorldProviderSkylands],
+    false
+  )
+
   DimensionManager.registerDimension(config.dimensionId, skylandsDimensionType)
 
-  def init(): Unit = {
-    MinecraftForge.EVENT_BUS.register(this)
-  }
+  def init(): Unit = ()
 
   private val beanChests = List(
     "minecraft:chests/stronghold_corridor",
