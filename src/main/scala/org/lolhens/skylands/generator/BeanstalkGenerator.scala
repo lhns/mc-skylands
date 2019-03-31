@@ -5,7 +5,7 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.world.WorldServer
 import org.lolhens.skylands.SkylandsMod
 import org.lolhens.skylands.block.BlockBeanStem
-import org.lolhens.skylands.enrich.RichBlockPos._
+import org.lolhens.skylands.ops.BlockPosOps._
 import org.lolhens.skylands.world.BlockArray
 
 /**

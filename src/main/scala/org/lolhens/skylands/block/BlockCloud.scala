@@ -7,13 +7,14 @@ import net.minecraft.creativetab.CreativeTabs
 import net.minecraft.entity.Entity
 import net.minecraft.entity.player.{EntityPlayer, EntityPlayerMP}
 import net.minecraft.util.EnumFacing.Axis
-import net.minecraft.util.math.{AxisAlignedBB, BlockPos}
+import net.minecraft.util.math.{AxisAlignedBB, BlockPos, Vec3d}
 import net.minecraft.util.{BlockRenderLayer, EnumFacing}
 import net.minecraft.world.{DimensionType, IBlockAccess, Teleporter, World}
 import net.minecraftforge.fml.relauncher.{Side, SideOnly}
 import org.lolhens.skylands.SkylandsMod
 import org.lolhens.skylands.block.BlockCloud.MaterialCloud
 import org.lolhens.skylands.world.SimpleTeleporter
+import org.lolhens.skylands.ops.EntityOps._
 
 /**
   * Created by pierr on 02.01.2017.
@@ -62,6 +63,10 @@ class BlockCloud extends Block(MaterialCloud) {
 
     if (!isFlying && entity.motionY <= 0.1) entity.onGround = true
 
+    transportPlayerToSkylands(world, position, entity)
+  }
+
+  def transportPlayerToSkylands(world: World, position: BlockPos, entity: Entity): Unit = {
     def nearCloud(position: BlockPos, radius: Int): Boolean = {
       for (
         x <- -radius to radius;
@@ -69,23 +74,24 @@ class BlockCloud extends Block(MaterialCloud) {
       ) yield position.add(x, 0, z)
     }.exists(world.getBlockState(_).getBlock == SkylandsMod.skylands.blockBeanStem)
 
-    entity match {
-      case player: EntityPlayerMP if !player.world.isRemote =>
-        val playerPos = new BlockPos(player)
+    //entity match {
+      //case player: EntityPlayerMP if !player.world.isRemote =>
+        val playerPos = new BlockPos(entity)
 
-        val teleportTarget: Option[(DimensionType, BlockPos)] =
-          if (player.dimension == DimensionType.OVERWORLD.getId && position.getY >= 250 && nearCloud(playerPos, 20))
-            Some(SkylandsMod.skylands.skylandsDimensionType -> playerPos.add(0, SkylandsMod.skylands.skylandsOverlap - 255, 0))
+        val teleportTarget: Option[(DimensionType, Vec3d)] =
+          if (entity.dimension == DimensionType.OVERWORLD.getId && position.getY >= 250 && nearCloud(playerPos, 30))
+            Some(SkylandsMod.skylands.skylandsDimensionType -> entity.getPositionVector.addVector(0, SkylandsMod.skylands.skylandsOverlap - 255, 0))
           else
             None
 
         for ((dimension, position) <- teleportTarget) {
-          val teleporter: Teleporter = new SimpleTeleporter(player.getServer.getWorld(dimension.getId), Some(position))
-          player.getServer.getPlayerList.transferPlayerToDimension(player, dimension.getId, teleporter)
+          /*val teleporter: Teleporter = new SimpleTeleporter(player.getServer.getWorld(dimension.getId), Some(position))
+          player.getServer.getPlayerList.transferPlayerToDimension(player, dimension.getId, teleporter)*/
+          entity.teleportTo(dimension, position, Vec3d.ZERO)
         }
 
-      case _ =>
-    }
+      //case _ =>
+    //}
   }
 }
 

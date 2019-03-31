@@ -20,6 +20,7 @@ import org.lolhens.skylands.block.{BlockBean, BlockBeanStem, BlockCloud}
 import org.lolhens.skylands.feature.{FallIntoOverworld, FeatherGliding}
 import org.lolhens.skylands.tileentities.TileEntityBeanPlant
 import org.lolhens.skylands.world.WorldProviderSkylands
+import scala.collection.JavaConverters._
 
 /**
   * Created by pierr on 02.01.2017.
@@ -110,65 +111,22 @@ class Skylands(configFile: File) {
   @SubscribeEvent
   def onWorldTick(event: TickEvent.WorldTickEvent): Unit = {
     if (event.world.provider.getDimensionType == skylandsDimensionType) {
-
-      //Minecraft.getMinecraft.renderGlobal.chunksToUpdate = Sets.newLinkedHashSet[RenderChunk]()
       if (_keepSkylandsLoaded)
         _keepSkylandsLoaded = false
       else if (skylandsDimensionType.shouldLoadSpawn())
         skylandsDimensionType.setLoadSpawn(false)
     }
-  }
 
-  var lightUpdates: Set[BlockPos] = Set.empty
-  val lightUpdatesLock = new Object()
-
-  @SubscribeEvent
-  def onClientTick(event: TickEvent.ClientTickEvent): Unit = {
-    /*if (event.phase == TickEvent.Phase.START) {
-      val minecraft = Minecraft.getMinecraft
-      if (Option(minecraft.world).isDefined) {
-        if (!minecraft.isGamePaused) {
-          /*val setLightUpdates = minecraft.renderGlobal.setLightUpdates.toSet
-          val renderDispatcher = minecraft.renderGlobal.renderDispatcher
-          if (setLightUpdates.nonEmpty && !renderDispatcher.hasNoFreeRenderBuilders) {
-            //if (minecraft.renderGlobal.chunksToUpdate.isEmpty)
-              //println("Processing light updates")
-
-            //lightUpdatesLock.synchronized(this.lightUpdates = setLightUpdates)
-            //val lightUpdates = setLightUpdates.groupBy(_.getY).map(e => e._1 -> e._2.size)
-            //println(lightUpdates.values.sum + "   " + lightUpdates.toList.sortBy(_._1).map(e => s"${e._1}:${e._2}").mkString(" "))
-            //setLightUpdates /*.take(10)*/ .foreach { pos =>
-              //if (minecraft.world.getBlockState(pos).getBlock == Blocks.AIR)
-                //minecraft.world.setBlockState(pos, Blocks.DIAMOND_BLOCK.getDefaultState, 2)
-              //val chunk = minecraft.world.getChunkFromBlockCoords(pos)
-              //relightBlock(chunk, pos)
-              //markBlocksForUpdate(minecraft.renderGlobal, pos.getX - 1, pos.getY - 1, pos.getZ - 1, pos.getX + 1, pos.getY + 1, pos.getZ + 1, false)
-            //}
-          }*/
-        }
-      }
-    }*/
+    event.world.loadedEntityList.asScala.toList.foreach { entity =>
+      FallIntoOverworld.update(entity)
+    }
   }
 
   @SubscribeEvent
-  def onServerTick(event: TickEvent.ServerTickEvent): Unit = {
-    /*if (event.phase == TickEvent.Phase.END) {
-      val minecraft = Minecraft.getMinecraft
-      if (minecraft.world != null) {
-        /*lightUpdatesLock.synchronized {
-          if (lightUpdates.nonEmpty) println(lightUpdates.size)
-          lightUpdates /*.take(10)*/ .foreach { pos =>
-            if (minecraft.world.getBlockState(pos).getBlock == Blocks.AIR)
-              minecraft.world.setBlockState(pos, Blocks.AIR.getDefaultState)
-            val chunk = minecraft.world.getChunkFromBlockCoords(pos)
-            chunk.relightBlock(pos.getX & 15, pos.getY, pos.getZ & 15)
-            minecraft.renderGlobal.markBlocksForUpdate(pos.getX - 1, pos.getY - 1, pos.getZ - 1, pos.getX + 1, pos.getY + 1, pos.getZ + 1, false)
-          }
-          lightUpdates = Set.empty
-        }*/
-      }
-    }*/
-  }
+  def onClientTick(event: TickEvent.ClientTickEvent): Unit = ()
+
+  @SubscribeEvent
+  def onServerTick(event: TickEvent.ServerTickEvent): Unit = ()
 
   @SubscribeEvent
   def onPlayerTick(event: TickEvent.PlayerTickEvent): Unit = {
