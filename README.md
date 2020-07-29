@@ -1,4 +1,4 @@
-# SkylandsMod
+# SkylandsMod (Minecraft Mod)
 [![Build status](https://teamcity.lolhens.de/app/rest/builds/buildType:SkylandsMod_Build/statusIcon.svg)](https://teamcity.lolhens.de/viewType.html?buildTypeId=SkylandsMod_Build&guest=1)
 
 This mod is a port of the old skylands dimension that was experimented with in Minecraft beta 1.6. It could be unlocked through modifications of the game and then replaced the overworld dimension.
