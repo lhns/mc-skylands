@@ -1,44 +1,9 @@
-buildscript {
-    repositories {
-        jcenter()
-        maven { url = "https://artifactory.lolhens.de/artifactory/maven-public/" }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-    }
-}
-
-apply plugin: 'net.minecraftforge.gradle.forge'
-apply plugin: 'scala'
 apply plugin: 'idea'
-apply plugin: 'eclipse'
 
-sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
+version = project.mod_version
+group = project.maven_group
 
-minecraft {
-    version = version_minecraft + "-" + version_forge
-    if (project.hasProperty("version_mappings")) mappings = version_mappings
-    runDir = "build/run"
-}
-
-processResources {
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-
-        // replace version and mcversion
-        expand 'version': project.version, 'mcversion': project.minecraft.version
-    }
-
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
+def tagPrefix = "refs/tags/"
+if ((System.getenv("CI_VERSION") ?: "").startsWith(tagPrefix)) {
+    version = System.getenv("CI_VERSION").drop(tagPrefix.length()).takeWhile { it != '+' }
 }

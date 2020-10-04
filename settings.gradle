@@ -1,1 +1,3 @@
 rootProject.name = 'SkylandsMod'
+
+include ':forge-1.16.2'
