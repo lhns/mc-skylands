@@ -28,5 +28,6 @@ object SkylandsChunkGenerator {
       BiomeSource.CODEC.fieldOf("biome_source").forGetter(generator => generator.biomeSource)
     ).apply(instance, instance.stable[java.util.function.Function[BiomeSource, SkylandsChunkGenerator]] { biomeSource =>
       new SkylandsChunkGenerator(biomeSource)
-    }))
+    })
+  )
 }
