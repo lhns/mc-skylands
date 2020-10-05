@@ -26,8 +26,7 @@ object SkylandsChunkGenerator {
   val CODEC: Codec[SkylandsChunkGenerator] = RecordCodecBuilder.create(instance =>
     instance.group(
       BiomeSource.CODEC.fieldOf("biome_source").forGetter(generator => generator.biomeSource)
-    ).apply(instance, { biomeSource: BiomeSource =>
+    ).apply(instance, instance.stable[java.util.function.Function[BiomeSource, SkylandsChunkGenerator]] { biomeSource =>
       new SkylandsChunkGenerator(biomeSource)
-    })
-  )
+    }))
 }
