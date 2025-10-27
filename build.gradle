@@ -4,7 +4,7 @@ buildscript {
         jcenter()
         mavenCentral()
         maven { url = "https://files.minecraftforge.net/maven" }
-        maven { url = "https://artifactory.lolhens.de/artifactory/maven-public/" }
+    // removed original artifactory reference
     }
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'

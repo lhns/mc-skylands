@@ -21,7 +21,8 @@ class CloudGenerator(world: WorldServer, position: BlockPos) extends StructureGe
   val random = new Random(world.getSeed + position.getX + position.getZ * position.getY)
 
   def drawCloudBlock(position: BlockPos): Unit =
-    if (syncedWorld.isReplaceable(position))
+    // only place cloud blocks within the configured vertical band (Y 7..10) to keep cloud layer thin
+    if (position.getY >= 7 && position.getY <= 10 && syncedWorld.isReplaceable(position))
       syncedWorld.setBlockState(position, SkylandsMod.skylands.blockCloud.getDefaultState)
 
   def drawSphere(position: BlockPos, size: Int): Unit = {

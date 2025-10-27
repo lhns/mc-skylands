@@ -1,24 +1,13 @@
-# SkylandsMod (Minecraft Mod)
-[![Build status](https://teamcity.lolhens.de/app/rest/builds/buildType:SkylandsMod_Build/statusIcon.svg)](https://teamcity.lolhens.de/viewType.html?buildTypeId=SkylandsMod_Build&guest=1)
+# Skyland Mod for Aeritas
 
-This mod is a port of the old skylands dimension that was experimented with in Minecraft beta 1.6. It could be unlocked through modifications of the game and then replaced the overworld dimension.
+Lightweight Skylands dimension and utilities for the Aeritas modpack.
 
-[Minecraft Wiki: Sky dimension](https://www.curseforge.com/linkout?remoteUrl=http%253a%252f%252fminecraft.gamepedia.com%252fMentioned_features%252fSky_dimension)
+This repository has been adapted for the Aeritas modpack: author metadata and non-essential assets were removed and the mod was streamlined to be lightweight and compatible in a modpack environment.
 
-This mod adds back the skylands as a seperate dimension. You start your game as normal but you can later travel to the skylands.
-
-![](https://raw.githubusercontent.com/LolHens/SkylandsMod/master/screenshots/2017-03-05_13.04.43.png)
-
-There are several ways to reach the skylands dimension via the mod's features.
-See the mod configuration and in-game documentation for details on accessing the Skylands.
-
-![](https://raw.githubusercontent.com/LolHens/SkylandsMod/master/screenshots/2017-03-05_13.01.29.png)
-
-![](https://raw.githubusercontent.com/LolHens/SkylandsMod/master/screenshots/2017-03-05_13.01.38.png)
+Build artifact (JAR) will be produced under `build/libs/` after running the Gradle build.
 
 ## Requirements
-### [Forge](https://files.minecraftforge.net/)
-[<img src="https://avatars2.githubusercontent.com/u/1390178" width="32"> Minecraft Forge](https://files.minecraftforge.net/)
+- Forge (1.12.2 recommended for this build)
 
 ## Licensing
 This project uses the Apache 2.0 License. See the file called LICENSE.

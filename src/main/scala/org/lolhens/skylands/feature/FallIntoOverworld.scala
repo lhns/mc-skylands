@@ -11,17 +11,36 @@ import org.lolhens.skylands.world.SimpleTeleporter
   */
 object FallIntoOverworld {
   def update(player: EntityPlayerMP): Unit = {
-    val teleportTarget: Option[(Int, BlockPos)] =
-      if (player.dimension == DimensionType.OVERWORLD.getId && player.posY >= 250)
-        None
-      else if (player.dimension == SkylandsMod.skylands.skylandsDimensionType.getId && player.posY <= 5)
-        Some((DimensionType.OVERWORLD.getId, new BlockPos(player.posX, 245, player.posZ)))
+    val toSkylands: Option[BlockPos] =
+      if (player.dimension != SkylandsMod.skylands.skylandsDimensionType.getId && player.posY > 256)
+        Some(new BlockPos(player.posX, 257, player.posZ))
       else
         None
 
-    for ((dimensionId, position) <- teleportTarget) {
-      val teleporter: Teleporter = new SimpleTeleporter(player.getServer.getWorld(dimensionId), Some(position))
-      player.getServer.getPlayerList.transferPlayerToDimension(player, dimensionId, teleporter)
+    val toOverworld: Option[BlockPos] =
+      if (player.dimension == SkylandsMod.skylands.skylandsDimensionType.getId && player.posY <= 5)
+        Some(new BlockPos(player.posX, 245, player.posZ))
+      else
+        None
+
+    // teleport to Skylands
+    for (target <- toSkylands) {
+      val serverWorld = player.getServer.getWorld(SkylandsMod.skylands.skylandsDimensionType.getId)
+      // find a safe spawn on top of terrain at the same X/Z
+      val basePos = new BlockPos(target.getX, 0, target.getZ)
+      val top = serverWorld.getTopSolidOrLiquidBlock(basePos)
+      val spawnPos = if (top.getY <= 0) new BlockPos(target.getX, 10, target.getZ) else top.up()
+      val teleporter: Teleporter = new SimpleTeleporter(serverWorld, Some(spawnPos))
+      player.getServer.getPlayerList.transferPlayerToDimension(player, SkylandsMod.skylands.skylandsDimensionType.getId, teleporter)
+    }
+
+    // teleport back to overworld
+    for (target <- toOverworld) {
+      val serverWorld = player.getServer.getWorld(DimensionType.OVERWORLD.getId)
+      val top = serverWorld.getTopSolidOrLiquidBlock(new BlockPos(target.getX, 0, target.getZ))
+      val spawnPos = if (top.getY <= 0) new BlockPos(target.getX, 245, target.getZ) else top.up()
+      val teleporter: Teleporter = new SimpleTeleporter(serverWorld, Some(spawnPos))
+      player.getServer.getPlayerList.transferPlayerToDimension(player, DimensionType.OVERWORLD.getId, teleporter)
     }
   }
 }

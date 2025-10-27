@@ -1,16 +1,16 @@
 [
   {
     "modid": "skylandsdim",
-    "name": "SkylandsDIM",
-    "description": "Adds a Skylands dimension for my modpack",
+    "name": "Skyland Mod (Aeritas)",
+    "description": "Skylands dimension and lightweight utilities for the Aeritas modpack",
     "version": "${version}",
-    "credits": "LolHens, th3falc0n",
+    "credits": "Aeritas Team",
     "logoFile": "assets/skylandsmod/logo.png",
     "mcversion": "${mcversion}",
-    "url": "https://github.com/LolHens/SkylandsMod",
+    "url": "",
     "updateUrl": "",
     "authorList": [
-      "yyymeniku",
+      "Aeritas"
     ],
     "parent": "",
     "screenshots": [],

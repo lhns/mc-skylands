@@ -11,6 +11,7 @@ import net.minecraft.world.gen.feature._
 import net.minecraft.world.gen.{MapGenCaves, NoiseGeneratorOctaves, NoiseGeneratorPerlin}
 
 import scala.util.Random
+import net.minecraftforge.fml.common.Loader
 
 /**
   * Created by pierr on 05.01.2017.
@@ -183,6 +184,7 @@ class SkylandsTerrainGenerator(world: World, random: Random) extends TerrainGene
   }
 
   override def populate(chunkX: Int, chunkZ: Int): Unit = {
+    val bopLoaded = Loader.isModLoaded("biomesoplenty")
     BlockFalling.fallInstantly = true
 
     val chunkWorldPos = new BlockPos(
@@ -320,13 +322,15 @@ class SkylandsTerrainGenerator(world: World, random: Random) extends TerrainGene
       new WorldGenMinable(Blocks.LAPIS_ORE.getDefaultState, 6).generate(world, populateRandom.self, pos)
     }
 
-    val treeNoiseValue = ((treeNoise.getValue(chunkWorldPos.getX.toDouble * 0.5D, chunkWorldPos.getZ.toDouble * 0.5D) / 8D + populateRandom.nextDouble() * 4D + 4D) / 3D).toInt
+  val treeNoiseValue = ((treeNoise.getValue(chunkWorldPos.getX.toDouble * 0.5D, chunkWorldPos.getZ.toDouble * 0.5D) / 8D + populateRandom.nextDouble() * 4D + 4D) / 3D).toInt
 
     var numTrees = 0
 
-    if (populateRandom.nextInt(10) == 0) numTrees += 1
+  if (populateRandom.nextInt(10) == 0) numTrees += 1
 
-    if (biome == Biomes.FOREST) numTrees += treeNoiseValue + 5
+  if (biome == Biomes.FOREST) numTrees += treeNoiseValue + 5
+  // If Biomes O' Plenty is present, increase tree density slightly to better match BOP biomes
+  if (bopLoaded) numTrees += (treeNoiseValue / 2)
 
     // rainforest
     if (biome == Biomes.FOREST_HILLS) numTrees += treeNoiseValue + 5
