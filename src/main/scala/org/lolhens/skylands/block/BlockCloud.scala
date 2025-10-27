@@ -67,7 +67,7 @@ class BlockCloud extends Block(MaterialCloud) {
         x <- -radius to radius;
         z <- -radius to radius
       ) yield position.add(x, 0, z)
-    }.exists(world.getBlockState(_).getBlock == SkylandsMod.skylands.blockBeanStem)
+    }.exists(world.getBlockState(_).getBlock == SkylandsMod.skylands.blockCloud)
 
     entity match {
       case player: EntityPlayerMP if !player.world.isRemote =>

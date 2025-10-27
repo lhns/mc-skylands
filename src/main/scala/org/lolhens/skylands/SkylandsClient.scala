@@ -15,8 +15,6 @@ class SkylandsClient(configFile: File) extends Skylands(configFile) {
     ModelLoader.setCustomModelResourceLocation(item, meta, new ModelResourceLocation(item.getRegistryName, "inventory"))
 
   override def registerModels(event: ModelRegistryEvent): Unit = {
-    registerModel(Item.getItemFromBlock(blockBeanStem), 0)
-    registerModel(Item.getItemFromBlock(blockBean), 0)
     registerModel(Item.getItemFromBlock(blockCloud), 0)
   }
 }

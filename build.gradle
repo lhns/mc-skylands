@@ -1,6 +1,9 @@
 buildscript {
     repositories {
+        // jcenter is deprecated; keep it for legacy resolution but prefer mavenCentral and Forge maven
         jcenter()
+        mavenCentral()
+        maven { url = "https://files.minecraftforge.net/maven" }
         maven { url = "https://artifactory.lolhens.de/artifactory/maven-public/" }
     }
     dependencies {

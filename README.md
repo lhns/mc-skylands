@@ -9,8 +9,8 @@ This mod adds back the skylands as a seperate dimension. You start your game as 
 
 ![](https://raw.githubusercontent.com/LolHens/SkylandsMod/master/screenshots/2017-03-05_13.04.43.png)
 
-In order to get to the skylands dimension you have to find a magic bean in a dungeon chest.
-Once you plant this bean, a giant bean stalk shoud grow and you will be able to climb up into the skylands.
+There are several ways to reach the skylands dimension via the mod's features.
+See the mod configuration and in-game documentation for details on accessing the Skylands.
 
 ![](https://raw.githubusercontent.com/LolHens/SkylandsMod/master/screenshots/2017-03-05_13.01.29.png)
 

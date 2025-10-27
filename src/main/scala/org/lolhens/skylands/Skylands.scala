@@ -16,9 +16,8 @@ import net.minecraftforge.event.{LootTableLoadEvent, RegistryEvent}
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.common.registry.GameRegistry
-import org.lolhens.skylands.block.{BlockBean, BlockBeanStem, BlockCloud}
+import org.lolhens.skylands.block.BlockCloud
 import org.lolhens.skylands.feature.{FallIntoOverworld, FeatherGliding}
-import org.lolhens.skylands.tileentities.TileEntityBeanPlant
 import org.lolhens.skylands.world.WorldProviderSkylands
 
 /**
@@ -27,13 +26,9 @@ import org.lolhens.skylands.world.WorldProviderSkylands
 class Skylands(configFile: File) {
   val config = new Config(configFile)
 
-  val blockBeanStem = new BlockBeanStem().setRegistryName("beanstem")
-  val blockBean = new BlockBean().setRegistryName("bean")
   val blockCloud = new BlockCloud().setRegistryName("cloud")
 
-  val blocks: Seq[Block] = Seq(blockBeanStem, blockBean, blockCloud)
-
-  GameRegistry.registerTileEntity(classOf[TileEntityBeanPlant], "bean_tile_entity")
+  val blocks: Seq[Block] = Seq(blockCloud)
 
   @SubscribeEvent
   def registerBlocks(event: RegistryEvent.Register[Block]): Unit = {
@@ -88,16 +83,7 @@ class Skylands(configFile: File) {
     def LootEntryItem(item: Item, weight: Int = 1, quality: Int = 0, functions: List[LootFunction] = Nil, conditions: List[LootCondition] = Nil) =
       new LootEntryItem(item, weight, quality, functions.toArray, conditions.toArray, item.getRegistryName.toString)
 
-    if (beanChests.contains(event.getName.toString))
-      event.getTable.addPool(
-        LootPool(
-          name = "skylands",
-          rolls = 1 to 1,
-          entries = List(LootEntryItem(
-            Item.getItemFromBlock(blockBean)
-          ))
-        )
-      )
+    // Beans removed: no loot entries to add
   }
 
   def keepSkylandsLoaded(): Unit = {

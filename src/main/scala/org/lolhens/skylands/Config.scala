@@ -11,7 +11,7 @@ class Config(configFile: File) {
   private val config = new Configuration(configFile)
   config.load()
 
-  val dimensionId: Int = config.get("IDs", "Dimension Id", 50, "Id of the skylands dimension").getInt
+  val dimensionId: Int = config.get("IDs", "Dimension Id", 89, "Id of the skylands dimension").getInt
 
   config.save()
 }
