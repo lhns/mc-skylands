@@ -3,6 +3,7 @@ package skylands
 import dev.architectury.event.events.common.TickEvent
 import org.slf4j.{Logger, LoggerFactory}
 import skylands.gameplay.FeatherGliding
+import skylands.loot.BeanLootInjection
 import skylands.registry.{SkylandsBlockEntities, SkylandsBlocks, SkylandsCreativeTabs, SkylandsItems, SkylandsWorldgen}
 import skylands.teleport.FallIntoOverworld
 
@@ -16,6 +17,7 @@ object SkylandsCommon:
     SkylandsItems.register()
     SkylandsCreativeTabs.register()
     SkylandsWorldgen.register()
+    BeanLootInjection.register()
     TickEvent.PLAYER_POST.register(player =>
       FallIntoOverworld.onPlayerTick(player)
       FeatherGliding.onPlayerTick(player)
