@@ -45,6 +45,22 @@ processResources {
     }
 }
 
+// Loom's NeoForge integration doesn't offer a fabricApi-style configureTests
+// helper, so add the run config by hand. Matches what MDG's
+// runs.gameTestServer { type = 'gameTestServer' } sets up: server() main
+// class + --gameTestServer program arg + the enabledGameTestNamespaces
+// system property scoped to this mod id.
+loom {
+    runs {
+        gameTestServer {
+            server()
+            name "GameTest Server"
+            property "neoforge.enabledGameTestNamespaces", rootProject.mod_id
+            programArg "--gameTestServer"
+        }
+    }
+}
+
 shadowJar {
     configurations = [project.configurations.shadowBundle]
     archiveClassifier = 'dev-shadow'

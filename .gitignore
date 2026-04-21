@@ -48,6 +48,10 @@ project/plugins/project/
 .gradle
 build/
 
+## Per-loader runClient / runGameTest working dirs
+fabric/run/
+neoforge/run/
+
 ## Gradle GUI config
 gradle-app.setting
 

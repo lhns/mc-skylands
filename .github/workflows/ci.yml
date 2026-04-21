@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+    branches: [master, 'arch-*']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # Three gates, cheapest first:
+      #   1. :common:test  — JUnit 5 tier, ~2s actual test time, no server boot.
+      #   2. :fabric:runGameTest — boots a headless MC server, runs the 3
+      #      FabricGameTest methods, exits with code = failure count.
+      #   3. :neoforge:runGameTestServer — same for NeoForge; task name differs
+      #      because the run config was built manually (Loom has no configureTests
+      #      equivalent for NeoForge).
+      - name: Run all three test gates
+        run: ./gradlew :common:test :fabric:runGameTest :neoforge:runGameTestServer --no-daemon --stacktrace
+
+      - name: Upload JUnit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-reports
+          path: common/build/reports/tests/
+          if-no-files-found: ignore
+
+      - name: Upload gametest reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gametest-reports
+          path: |
+            fabric/build/gametest/
+            neoforge/build/gametest/
+          if-no-files-found: ignore

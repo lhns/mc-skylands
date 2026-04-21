@@ -24,6 +24,9 @@
         "adapter": "scala",
         "value": "skylands.fabric.SkylandsFabricClient"
       }
+    ],
+    "fabric-gametest": [
+      "skylands.fabric.gametest.FabricGameTests"
     ]
   },
   "depends": {

@@ -47,6 +47,17 @@ processResources {
     }
 }
 
+// Create a runGameTestServer task that boots a headless server, runs every
+// @GameTest method in a @GameTestHolder("skylands") holder, and exits with
+// a non-zero code if any required test failed.
+fabricApi {
+    configureTests {
+        createSourceSet = false
+        modId = rootProject.mod_id
+        enableGameTests = true
+    }
+}
+
 shadowJar {
     configurations = [project.configurations.shadowBundle]
     archiveClassifier = 'dev-shadow'
