@@ -1,7 +1,7 @@
 package skylands
 
 import org.slf4j.{Logger, LoggerFactory}
-import skylands.registry.{SkylandsBlockEntities, SkylandsBlocks, SkylandsCreativeTabs, SkylandsItems}
+import skylands.registry.{SkylandsBlockEntities, SkylandsBlocks, SkylandsCreativeTabs, SkylandsItems, SkylandsWorldgen}
 
 object SkylandsCommon:
   val ModId: String = "skylands"
@@ -12,4 +12,5 @@ object SkylandsCommon:
     SkylandsBlockEntities.register()
     SkylandsItems.register()
     SkylandsCreativeTabs.register()
+    SkylandsWorldgen.register()
     Log.info("Skylands init (common)")
