@@ -1,21 +1,21 @@
 package skylands.registry
 
-import dev.architectury.registry.CreativeTabRegistry
-import dev.architectury.registry.registries.{DeferredRegister, RegistrySupplier}
-import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.{CreativeModeTab, ItemStack}
-import skylands.SkylandsCommon.ModId
+import skylands.platform.SkylandsPlatform
+
+import java.util.function.Supplier
 
 object SkylandsCreativeTabs:
-  val TABS: DeferredRegister[CreativeModeTab] =
-    DeferredRegister.create(ModId, Registries.CREATIVE_MODE_TAB)
-
-  val SKYLANDS: RegistrySupplier[CreativeModeTab] = TABS.register(
-    "skylands",
-    () =>
-      CreativeTabRegistry.create(builder =>
-        builder
+  val SKYLANDS: Supplier[CreativeModeTab] =
+    SkylandsPlatform.current.registerCreativeTab(
+      "skylands",
+      () =>
+        // 2-arg builder(row, column) instead of no-arg — Fabric's remapped
+        // CreativeModeTab class drops the no-arg overload. Row.TOP, col=0 is
+        // the usual "just put it somewhere reasonable in the creative menu" slot.
+        CreativeModeTab
+          .builder(CreativeModeTab.Row.TOP, 0)
           .title(Component.translatable("itemGroup.skylands"))
           .icon(() => new ItemStack(SkylandsItems.BEAN.get()))
           .displayItems((_, output) =>
@@ -23,7 +23,7 @@ object SkylandsCreativeTabs:
             output.accept(SkylandsItems.BEAN.get())
             output.accept(SkylandsItems.BEANSTALK.get())
           )
-      )
-  )
+          .build()
+    )
 
-  def register(): Unit = TABS.register()
+  def register(): Unit = ()

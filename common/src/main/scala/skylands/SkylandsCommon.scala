@@ -1,9 +1,9 @@
 package skylands
 
-import dev.architectury.event.events.common.TickEvent
 import org.slf4j.{Logger, LoggerFactory}
 import skylands.gameplay.FeatherGliding
 import skylands.loot.BeanLootInjection
+import skylands.platform.SkylandsPlatform
 import skylands.registry.{SkylandsBlockEntities, SkylandsBlocks, SkylandsCreativeTabs, SkylandsItems, SkylandsWorldgen}
 import skylands.teleport.FallIntoOverworld
 
@@ -18,8 +18,8 @@ object SkylandsCommon:
     SkylandsCreativeTabs.register()
     SkylandsWorldgen.register()
     BeanLootInjection.register()
-    TickEvent.PLAYER_POST.register(player =>
+    SkylandsPlatform.current.onPlayerPostTick { player =>
       FallIntoOverworld.onPlayerTick(player)
       FeatherGliding.onPlayerTick(player)
-    )
+    }
     Log.info("Skylands init (common)")

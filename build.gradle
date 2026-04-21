@@ -1,16 +1,16 @@
+// Root build: per-subproject plugins are applied in each subproject's build.gradle
+// (fabric-loom for common/fabric, net.neoforged.moddev for neoforge). The root
+// only applies the cross-cutting Java/Scala toolchain + repositories.
+//
+// The `idea` plugin is needed on the root because fabric-loom configures
+// `ideaProject` to wire up run configurations. Without it, loom errors at
+// plugin-apply time.
 plugins {
-    id 'architectury-plugin' version "${architectury_plugin_version}"
-    id 'dev.architectury.loom' version "${architectury_loom_version}" apply false
-}
-
-architectury {
-    minecraft = rootProject.minecraft_version
+    id 'idea'
 }
 
 subprojects {
-    apply plugin: 'dev.architectury.loom'
-    apply plugin: 'architectury-plugin'
-    apply plugin: 'maven-publish'
+    apply plugin: 'java'
     apply plugin: 'scala'
 
     base {
@@ -20,23 +20,12 @@ subprojects {
     group = rootProject.maven_group
 
     repositories {
-        maven { url = 'https://maven.architectury.dev/' }
         maven { url = 'https://maven.fabricmc.net/' }
         maven { url = 'https://maven.neoforged.net/releases/' }
         mavenCentral()
     }
 
-    loom {
-        silentMojangMappingsLicense()
-    }
-
-    dependencies {
-        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-        mappings loom.officialMojangMappings()
-    }
-
     java {
-        withSourcesJar()
         toolchain { languageVersion = JavaLanguageVersion.of(21) }
     }
 

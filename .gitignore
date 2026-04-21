@@ -44,6 +44,9 @@ project/plugins/project/
 .lib/
 
 
+### Claude Code local state ###
+.claude/
+
 ### Gradle ###
 .gradle
 build/

@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [master, 'arch-*']
+    branches: [master, 'arch-*', 'multi-*']
   pull_request:
 
 jobs:
@@ -26,10 +26,10 @@ jobs:
       # Three gates, cheapest first:
       #   1. :common:test  — JUnit 5 tier, ~2s actual test time, no server boot.
       #   2. :fabric:runGameTest — boots a headless MC server, runs the 3
-      #      FabricGameTest methods, exits with code = failure count.
-      #   3. :neoforge:runGameTestServer — same for NeoForge; task name differs
-      #      because the run config was built manually (Loom has no configureTests
-      #      equivalent for NeoForge).
+      #      FabricGameTest methods, exits with code = failure count. Task
+      #      name comes from loom.runs.gameTest config in fabric/build.gradle.
+      #   3. :neoforge:runGameTestServer — same for NeoForge; task name is
+      #      MDG's native naming for a `type = 'gameTestServer'` run.
       - name: Run all three test gates
         run: ./gradlew :common:test :fabric:runGameTest :neoforge:runGameTestServer --no-daemon --stacktrace
 

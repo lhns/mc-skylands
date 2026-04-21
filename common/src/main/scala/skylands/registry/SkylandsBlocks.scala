@@ -1,16 +1,20 @@
 package skylands.registry
 
-import dev.architectury.registry.registries.{DeferredRegister, RegistrySupplier}
-import net.minecraft.core.registries.Registries
 import net.minecraft.world.level.block.Block
-import skylands.SkylandsCommon.ModId
 import skylands.block.{BeanBlock, BeanstalkBlock, CloudBlock}
+import skylands.platform.SkylandsPlatform
+
+import java.util.function.Supplier
 
 object SkylandsBlocks:
-  val BLOCKS: DeferredRegister[Block] = DeferredRegister.create(ModId, Registries.BLOCK)
+  val CLOUD: Supplier[Block] =
+    SkylandsPlatform.current.registerBlock("cloud", () => new CloudBlock())
+  val BEAN: Supplier[Block] =
+    SkylandsPlatform.current.registerBlock("bean", () => new BeanBlock())
+  val BEANSTALK: Supplier[Block] =
+    SkylandsPlatform.current.registerBlock("beanstalk", () => new BeanstalkBlock())
 
-  val CLOUD: RegistrySupplier[Block] = BLOCKS.register("cloud", () => new CloudBlock())
-  val BEAN: RegistrySupplier[Block] = BLOCKS.register("bean", () => new BeanBlock())
-  val BEANSTALK: RegistrySupplier[Block] = BLOCKS.register("beanstalk", () => new BeanstalkBlock())
-
-  def register(): Unit = BLOCKS.register()
+  // Called once from SkylandsCommon.init(). The mere act of dispatching this
+  // method initializes the enclosing object, which evaluates CLOUD/BEAN/BEANSTALK
+  // and queues them with the platform.
+  def register(): Unit = ()

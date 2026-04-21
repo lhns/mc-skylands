@@ -1,25 +1,25 @@
 package skylands.registry
 
-import dev.architectury.registry.registries.{DeferredRegister, RegistrySupplier}
-import net.minecraft.core.registries.Registries
 import net.minecraft.world.item.{BlockItem, Item}
+import skylands.platform.SkylandsPlatform
 
-import skylands.SkylandsCommon.ModId
+import java.util.function.Supplier
 
 object SkylandsItems:
-  val ITEMS: DeferredRegister[Item] = DeferredRegister.create(ModId, Registries.ITEM)
+  val CLOUD: Supplier[Item] =
+    SkylandsPlatform.current.registerItem(
+      "cloud",
+      () => new BlockItem(SkylandsBlocks.CLOUD.get(), new Item.Properties())
+    )
+  val BEAN: Supplier[Item] =
+    SkylandsPlatform.current.registerItem(
+      "bean",
+      () => new BlockItem(SkylandsBlocks.BEAN.get(), new Item.Properties())
+    )
+  val BEANSTALK: Supplier[Item] =
+    SkylandsPlatform.current.registerItem(
+      "beanstalk",
+      () => new BlockItem(SkylandsBlocks.BEANSTALK.get(), new Item.Properties())
+    )
 
-  val CLOUD: RegistrySupplier[Item] = ITEMS.register(
-    "cloud",
-    () => new BlockItem(SkylandsBlocks.CLOUD.get(), new Item.Properties())
-  )
-  val BEAN: RegistrySupplier[Item] = ITEMS.register(
-    "bean",
-    () => new BlockItem(SkylandsBlocks.BEAN.get(), new Item.Properties())
-  )
-  val BEANSTALK: RegistrySupplier[Item] = ITEMS.register(
-    "beanstalk",
-    () => new BlockItem(SkylandsBlocks.BEANSTALK.get(), new Item.Properties())
-  )
-
-  def register(): Unit = ITEMS.register()
+  def register(): Unit = ()

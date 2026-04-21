@@ -1,24 +1,24 @@
-plugins {
-    id 'com.gradleup.shadow' version '8.3.3'
-}
-
-architectury {
-    platformSetupLoomIde()
-    fabric()
-}
-
-configurations {
-    common {
-        canBeResolved = true
-        canBeConsumed = false
+buildscript {
+    repositories {
+        maven { url = 'https://maven.fabricmc.net/' }
+        gradlePluginPortal()
     }
-    compileClasspath.extendsFrom common
-    runtimeClasspath.extendsFrom common
-    developmentFabric.extendsFrom common
+    dependencies {
+        classpath "net.fabricmc:fabric-loom:${rootProject.fabric_loom_version}"
+    }
+}
 
-    shadowBundle {
-        canBeResolved = true
-        canBeConsumed = false
+apply plugin: 'fabric-loom'
+apply plugin: 'scala'
+
+// MultiLoader-Template: inline shared common sources directly. Both loaders
+// compile against Mojmap + Scala 3 stdlib, so the common sources compile
+// identically in each build — no separate common jar, no shadow.
+sourceSets {
+    main {
+        scala.srcDirs += project(':common').file('src/main/scala')
+        java.srcDirs  += project(':common').file('src/main/java')
+        resources.srcDirs += project(':common').file('src/main/resources')
     }
 }
 
@@ -27,15 +27,14 @@ repositories {
 }
 
 dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    mappings loom.officialMojangMappings()
+
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
-    modImplementation "dev.architectury:architectury-fabric:${rootProject.architectury_api_version}"
     modImplementation "dev.krysztal:krysztal-language-scala:${rootProject.kls_version}+scala.${rootProject.kls_scala_version}"
 
     implementation "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
-
-    common(project(path: ':common', configuration: 'namedElements')) { transitive false }
-    shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
 }
 
 processResources {
@@ -47,46 +46,18 @@ processResources {
     }
 }
 
-// Create a runGameTestServer task that boots a headless server, runs every
-// @GameTest method in a @GameTestHolder("skylands") holder, and exits with
-// a non-zero code if any required test failed.
-fabricApi {
-    configureTests {
-        createSourceSet = false
-        modId = rootProject.mod_id
-        enableGameTests = true
-    }
-}
-
-shadowJar {
-    configurations = [project.configurations.shadowBundle]
-    archiveClassifier = 'dev-shadow'
-}
-
-remapJar {
-    inputFile.set shadowJar.archiveFile
-    dependsOn shadowJar
-    archiveClassifier = null
-}
-
-jar {
-    archiveClassifier = 'dev'
-}
-
-sourcesJar {
-    def commonSources = project(':common').sourcesJar
-    dependsOn commonSources
-    from commonSources.archiveFile.map { zipTree(it) }
-}
-
-publishing {
-    publications {
-        mavenFabric(MavenPublication) {
-            artifactId = "${rootProject.archives_base_name}-fabric"
-            from components.java
+// Declare the gametest run manually — plain Fabric Loom 1.7 does not auto-create
+// one from the fabric-gametest-api-v1 dep (that was Architectury Loom's
+// `fabricApi.configureTests { }` convenience). Task: `runGameTest`. Pattern
+// lifted from fabric-api's own build.gradle on the 1.21 branch.
+loom {
+    runs {
+        gameTest {
+            server()
+            name = 'Game Test'
+            vmArg '-Dfabric-api.gametest'
+            vmArg "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml"
+            runDir 'build/gametest'
         }
-    }
-
-    repositories {
     }
 }

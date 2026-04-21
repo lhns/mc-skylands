@@ -1,16 +1,15 @@
 package skylands.loot
 
-import dev.architectury.event.events.common.LootEvent
 import net.minecraft.resources.ResourceKey
 import net.minecraft.world.level.storage.loot.entries.LootItem
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue
 import net.minecraft.world.level.storage.loot.{BuiltInLootTables, LootPool, LootTable}
+import skylands.platform.SkylandsPlatform
 import skylands.registry.SkylandsItems
 
 // Faithful port of the 1.12.2 Skylands.onLootTableLoad loot injection.
 // Adds a single-entry bean pool (rolls=1) to the vanilla loot tables listed
-// in the original mod. Uses Architectury's cross-loader LootEvent so the
-// same code drives both Fabric and NeoForge at runtime.
+// in the original mod. Cross-loader dispatch goes through SkylandsPlatform.
 object BeanLootInjection:
   // 1.12.2 mapped "chests/village_blacksmith" to what was then the single
   // village blacksmith chest. The closest modern equivalent is the weaponsmith.
@@ -36,12 +35,11 @@ object BeanLootInjection:
     set
 
   def register(): Unit =
-    LootEvent.MODIFY_LOOT_TABLE.register((id, ctx, builtin) =>
-      if targets.contains(id) then
-        ctx.addPool(
-          LootPool
-            .lootPool()
-            .setRolls(ConstantValue.exactly(1f))
-            .add(LootItem.lootTableItem(SkylandsItems.BEAN.get()))
-        )
+    SkylandsPlatform.current.onLootTableModify(
+      targets,
+      () =>
+        LootPool
+          .lootPool()
+          .setRolls(ConstantValue.exactly(1f))
+          .add(LootItem.lootTableItem(SkylandsItems.BEAN.get()))
     )

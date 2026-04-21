@@ -34,7 +34,6 @@
     "minecraft": "~1.21.1",
     "java": ">=21",
     "fabric-api": "*",
-    "architectury": ">=13.0.0",
     "krysztal-language-scala": ">=3.3.0"
   }
 }
