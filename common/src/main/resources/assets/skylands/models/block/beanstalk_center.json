@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "skylands:block/beanstalk_center",
+    "side": "skylands:block/beanstalk_center_side"
+  }
+}

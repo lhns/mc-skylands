@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "center=false": { "model": "skylands:block/beanstalk" },
+    "center=true":  { "model": "skylands:block/beanstalk_center" }
+  }
+}

@@ -18,6 +18,12 @@
         "adapter": "scala",
         "value": "skylands.fabric.SkylandsFabric"
       }
+    ],
+    "client": [
+      {
+        "adapter": "scala",
+        "value": "skylands.fabric.SkylandsFabricClient"
+      }
     ]
   },
   "depends": {
