@@ -1,44 +1,52 @@
-buildscript {
+plugins {
+    id 'architectury-plugin' version "${architectury_plugin_version}"
+    id 'dev.architectury.loom' version "${architectury_loom_version}" apply false
+}
+
+architectury {
+    minecraft = rootProject.minecraft_version
+}
+
+subprojects {
+    apply plugin: 'dev.architectury.loom'
+    apply plugin: 'architectury-plugin'
+    apply plugin: 'maven-publish'
+    apply plugin: 'scala'
+
+    base {
+        archivesName = "${rootProject.archives_base_name}-${project.name}"
+    }
+    version = rootProject.mod_version
+    group = rootProject.maven_group
+
     repositories {
-        jcenter()
-        maven { url = "https://artifactory.lolhens.de/artifactory/maven-public/" }
+        maven { url = 'https://maven.architectury.dev/' }
+        maven { url = 'https://maven.fabricmc.net/' }
+        maven { url = 'https://maven.neoforged.net/releases/' }
+        mavenCentral()
     }
+
+    loom {
+        silentMojangMappingsLicense()
+    }
+
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-    }
-}
-
-apply plugin: 'net.minecraftforge.gradle.forge'
-apply plugin: 'scala'
-apply plugin: 'idea'
-apply plugin: 'eclipse'
-
-sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
-
-minecraft {
-    version = version_minecraft + "-" + version_forge
-    if (project.hasProperty("version_mappings")) mappings = version_mappings
-    runDir = "build/run"
-}
-
-processResources {
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-
-        // replace version and mcversion
-        expand 'version': project.version, 'mcversion': project.minecraft.version
+        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+        mappings loom.officialMojangMappings()
     }
 
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
+    java {
+        withSourcesJar()
+        toolchain { languageVersion = JavaLanguageVersion.of(21) }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = 21
+    }
+
+    tasks.withType(ScalaCompile).configureEach {
+        scalaCompileOptions.encoding = 'UTF-8'
+        scalaCompileOptions.additionalParameters = ['-release', '21']
     }
 }
