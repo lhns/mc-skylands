@@ -1,5 +1,8 @@
-modLoader = "javafml"
-loaderVersion = "[4,)"
+modLoader = "kotori_scala"
+# Wildcard per the Kotori316/SLP canonical example — the mod works with any
+# kotori_scala language provider. The actual SCF version we develop against
+# is pinned in gradle.properties via scf_neoforge_version.
+loaderVersion = "[1.0.0,)"
 license = "Apache-2.0"
 issueTrackerURL = "https://github.com/lhns/mc-skylands/issues"
 

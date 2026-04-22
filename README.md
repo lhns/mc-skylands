@@ -17,8 +17,20 @@ Once you plant this bean, a giant bean stalk shoud grow and you will be able to 
 ![](https://raw.githubusercontent.com/LolHens/SkylandsMod/master/screenshots/2017-03-05_13.01.38.png)
 
 ## Requirements
-### [Forge](https://files.minecraftforge.net/)
-[<img src="https://avatars2.githubusercontent.com/u/1390178" width="32"> Minecraft Forge](https://files.minecraftforge.net/)
+
+### Minecraft 1.21.1
+
+**Fabric:**
+- [Fabric Loader](https://fabricmc.net/use/) ≥ 0.16.0
+- [Fabric API](https://modrinth.com/mod/fabric-api)
+- [krysztal-language-scala](https://maven.krysztal.dev/releases) ≥ 3.3.0 — Scala 3 language adapter for Fabric
+
+**NeoForge:**
+- [NeoForge](https://neoforged.net/) ≥ 21.1
+- [Scalable Cat's Force](https://www.curseforge.com/minecraft/mc-mods/scalable-cats-force) (SCF) — the shared Scala 3 language provider for Scala-backed NeoForge mods. Skylands loads against it at runtime rather than bundling its own Scala library, so it coexists with other Scala-backed mods (Thaumcraft NF, QuarryPlus, etc.).
+
+### Minecraft 1.12.2 (legacy)
+[<img src="https://avatars2.githubusercontent.com/u/1390178" width="32"> Minecraft Forge](https://files.minecraftforge.net/) — see the `master` branch.
 
 ## Licensing
 This project uses the Apache 2.0 License. See the file called LICENSE.

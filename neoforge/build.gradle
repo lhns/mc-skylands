@@ -14,6 +14,10 @@ sourceSets {
     }
 }
 
+repositories {
+    maven { name = 'Kotori316 Maven'; url = 'https://maven.kotori316.com' }
+}
+
 neoForge {
     version = rootProject.neoforge_version
 
@@ -40,20 +44,29 @@ neoForge {
 }
 
 dependencies {
-    implementation "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
+    // Scala 3 language provider. Pattern lifted from Pierre's mc-fluid-physics
+    // (neoforge-1.21.1/build.gradle) which solved the same JPMS collision we'd
+    // otherwise hit any time a user installs another Scala-backed mod (SCF's
+    // module exports scala.quoted.runtime to org.scala.lang.scala3.library and
+    // a JiJ'd scala3-library_3 owns that package — split-package, mod layer
+    // refused).
+    //   - `:with-library` classifier: scala2 + scala3 + cats merged flat into
+    //     one JPMS module (`kotori_scala`). The plain classifier is jar-in-jar
+    //     and recreates the collision.
+    //   - transitive=false: SCF's POM otherwise re-adds scala3-library_3 as a
+    //     separate jar, producing duplicate modules on the runtime classpath.
+    //   - `modLoader = "kotori_scala"` in neoforge.mods.toml enforces SCF's
+    //     presence; no `[[dependencies]]` block for SCF (it's FMLModType=LIBRARY
+    //     with no registered mod id, so a dep check against it would fail).
+    runtimeOnly("com.kotori316:scalablecatsforce-neoforge:${rootProject.scf_neoforge_version}:with-library") {
+        transitive = false
+    }
 
-    // JiJ Scala stdlib so end-user NeoForge installations don't have to
-    // install Scala as a separate mod.
-    jarJar "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
-
-    // MDG splits the dev-run classpath into two layers: Gradle's runtimeClasspath
-    // (fed by `implementation`) and the FML/ModLauncher transforming layer.
-    // ModLauncher only auto-promotes artifacts that are themselves mods or
-    // declare FMLModType in their manifest — plain libraries like scala3-library
-    // are invisible to the mod's runtime classloader. MDG exposes
-    // `additionalRuntimeClasspath` precisely for language-runtime libs like this;
-    // without it, Skylands init NPEs with `NoClassDefFoundError: scala/Function1`.
-    additionalRuntimeClasspath "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
+    // Compile against scala3-library directly; SCF provides it at runtime in
+    // both production and MDG dev runs (it's a real mod, MDG auto-promotes it
+    // to the transforming classpath — unlike a plain library that needed the
+    // `additionalRuntimeClasspath` escape hatch we used to need with jarJar).
+    compileOnly "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
 }
 
 processResources {
