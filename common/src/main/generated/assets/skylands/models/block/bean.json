@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "skylands:block/cloud"
+    "all": "skylands:block/bean"
   }
 }

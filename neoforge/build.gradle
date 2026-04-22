@@ -10,6 +10,7 @@ sourceSets {
         scala.srcDirs += project(':common').file('src/main/scala')
         java.srcDirs  += project(':common').file('src/main/java')
         resources.srcDirs += project(':common').file('src/main/resources')
+        resources.srcDirs += project(':common').file('src/main/generated')
     }
 }
 

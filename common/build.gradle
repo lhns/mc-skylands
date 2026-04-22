@@ -16,6 +16,15 @@ buildscript {
 apply plugin: 'fabric-loom'
 apply plugin: 'scala'
 
+// Datagen output lives alongside the hand-authored resources. The fabric
+// subproject's `fabricApi.configureDataGeneration` writes here, and both
+// platforms inline it via srcDirs so NeoForge picks up the same JSONs.
+sourceSets {
+    main {
+        resources.srcDirs += 'src/main/generated'
+    }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
     mappings loom.officialMojangMappings()

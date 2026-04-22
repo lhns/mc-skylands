@@ -23,6 +23,20 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      # Datagen gate: re-run data generation and fail if the output differs
+      # from what's committed under common/src/main/generated/. Catches
+      # accidental hand-edits of generated JSONs and drift between providers
+      # and output.
+      - name: Verify datagen output is up-to-date
+        run: |
+          ./gradlew :fabric:runDatagen --no-daemon
+          if ! git diff --quiet --exit-code common/src/main/generated/; then
+            echo "::error::runDatagen produced output that differs from what's committed."
+            echo "Run './gradlew :fabric:runDatagen' locally and commit common/src/main/generated/."
+            git --no-pager diff common/src/main/generated/
+            exit 1
+          fi
+
       # Three gates, cheapest first:
       #   1. :common:test  — JUnit 5 tier, ~2s actual test time, no server boot.
       #   2. :fabric:runGameTest — boots a headless MC server, runs the 3

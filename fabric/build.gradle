@@ -19,6 +19,7 @@ sourceSets {
         scala.srcDirs += project(':common').file('src/main/scala')
         java.srcDirs  += project(':common').file('src/main/java')
         resources.srcDirs += project(':common').file('src/main/resources')
+        resources.srcDirs += project(':common').file('src/main/generated')
     }
 }
 
@@ -59,5 +60,21 @@ loom {
             vmArg "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml"
             runDir 'build/gametest'
         }
+    }
+}
+
+// Datagen: outputs block states, block/item models, loot tables, and lang
+// JSONs from SkylandsDataGen into common/src/main/generated. Both loaders'
+// source sets inline that path, so the same generated JSONs feed Fabric and
+// NeoForge. The dimension/dimension_type/pack.mcmeta/empty.nbt files stay
+// hand-written (worldgen-bootstrap-registry datagen is more involved and
+// low-ROI for three entries).
+fabricApi {
+    configureDataGeneration {
+        modId = rootProject.mod_id
+        outputDirectory = project(':common').file('src/main/generated')
+        createSourceSet = false
+        addToResources = false
+        strictValidation = true
     }
 }

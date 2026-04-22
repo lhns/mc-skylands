@@ -51,6 +51,10 @@ project/plugins/project/
 .gradle
 build/
 
+## Datagen provenance cache — Fabric's DataProvider writes timestamps here on
+## every run. Committing it would make CI's datagen-up-to-date diff fail.
+common/src/main/generated/.cache/
+
 ## Per-loader runClient / runGameTest working dirs
 fabric/run/
 neoforge/run/

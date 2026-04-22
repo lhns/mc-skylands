@@ -27,6 +27,12 @@
     ],
     "fabric-gametest": [
       "skylands.fabric.gametest.FabricGameTests"
+    ],
+    "fabric-datagen": [
+      {
+        "adapter": "scala",
+        "value": "skylands.fabric.datagen.SkylandsDataGen"
+      }
     ]
   },
   "depends": {
