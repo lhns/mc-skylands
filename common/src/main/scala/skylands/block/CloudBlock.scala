@@ -17,14 +17,20 @@ import skylands.teleport.SkylandsTeleport
 class CloudBlock extends Block(CloudBlock.Properties):
   import CloudBlock._
 
-  override def skipRendering(state: BlockState, adjacent: BlockState, dir: Direction): Boolean =
-    adjacent.is(this) || super.skipRendering(state, adjacent, dir)
-
   override def getVisualShape(state: BlockState, level: BlockGetter, pos: BlockPos, ctx: CollisionContext): VoxelShape =
     Shapes.empty()
 
   override def getCollisionShape(state: BlockState, level: BlockGetter, pos: BlockPos, ctx: CollisionContext): VoxelShape =
     Shapes.empty()
+
+  // Match vanilla AbstractGlassBlock: sunlight passes through clouds, and
+  // no ambient-occlusion shading darkens terrain under a cloud layer.
+  // `.noOcclusion()` alone isn't always enough — glass sets both anyway.
+  override def getLightBlock(state: BlockState, level: BlockGetter, pos: BlockPos): Int = 0
+
+  override def getShadeBrightness(state: BlockState, level: BlockGetter, pos: BlockPos): Float = 1.0f
+
+  override def propagatesSkylightDown(state: BlockState, level: BlockGetter, pos: BlockPos): Boolean = true
 
   override def entityInside(state: BlockState, level: Level, pos: BlockPos, entity: Entity): Unit =
     val velocity = entity.getDeltaMovement
@@ -75,6 +81,29 @@ object CloudBlock:
   private val TeleportMinY: Int = 250
   private val BeanstalkSearchRadius: Int = 20
   private val SkylandsOverlap: Int = 15
+
+  // Port of 1.12.2 BlockCloud.shouldSideBeRendered — returns whether the face
+  // of the rendered cloud at `selfPos` in direction `faceDir` should be culled
+  // (hidden). Loader glue calls this:
+  //   - NeoForge: CloudBlockNeoForge.hidesNeighborFace
+  //   - Fabric: CloudBakedModel.emitBlockQuads via QuadTransform
+  //
+  // Logic: cull iff (a) horizontal face AND (b) neighbor in `faceDir` is cloud
+  // AND (c) all three horizontal neighbors of the rendered cloud other than
+  // `faceDir` are either cloud or air. Any solid non-cloud block on a
+  // perpendicular side reveals the interior face — matching how 1.12.2 cloud
+  // clusters that touch a beanstalk show their inner wall from inside.
+  def shouldCullFace(level: BlockGetter, selfPos: BlockPos, faceDir: Direction, cloudBlock: Block): Boolean =
+    if faceDir.getAxis == Direction.Axis.Y then return false
+    val neighbor = level.getBlockState(selfPos.relative(faceDir))
+    if !neighbor.is(cloudBlock) then return false
+    val it = Direction.Plane.HORIZONTAL.iterator
+    while it.hasNext do
+      val d = it.next()
+      if d != faceDir then
+        val s = level.getBlockState(selfPos.relative(d))
+        if !s.is(cloudBlock) && !s.isAir then return false
+    true
 
   private val Properties: BlockBehaviour.Properties =
     BlockBehaviour.Properties.of()

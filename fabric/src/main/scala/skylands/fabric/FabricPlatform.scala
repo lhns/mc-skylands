@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.entity.{BlockEntity, BlockEntityType}
 import net.minecraft.world.level.chunk.ChunkGenerator
 import net.minecraft.world.level.storage.loot.{LootPool, LootTable}
 import skylands.SkylandsCommon.ModId
+import skylands.block.CloudBlock
 import skylands.platform.SkylandsPlatform
 
 import java.util.function.Supplier
@@ -28,6 +29,8 @@ class FabricPlatform extends SkylandsPlatform:
   override def registerBlock[B <: Block](id: String, factory: () => B): Supplier[B] =
     val block: B = Registry.register(BuiltInRegistries.BLOCK, rl(id), factory())
     () => block
+
+  override def newCloudBlock(): CloudBlock = new CloudBlock()
 
   override def registerItem[I <: Item](id: String, factory: () => I): Supplier[I] =
     val item: I = Registry.register(BuiltInRegistries.ITEM, rl(id), factory())

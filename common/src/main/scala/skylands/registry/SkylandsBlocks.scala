@@ -8,7 +8,7 @@ import java.util.function.Supplier
 
 object SkylandsBlocks:
   val CLOUD: Supplier[Block] =
-    SkylandsPlatform.current.registerBlock("cloud", () => new CloudBlock())
+    SkylandsPlatform.current.registerBlock("cloud", () => SkylandsPlatform.current.newCloudBlock())
   val BEAN: Supplier[Block] =
     SkylandsPlatform.current.registerBlock("bean", () => new BeanBlock())
   val BEANSTALK: Supplier[Block] =

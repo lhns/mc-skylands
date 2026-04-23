@@ -19,6 +19,8 @@ import net.neoforged.neoforge.event.LootTableLoadEvent
 import net.neoforged.neoforge.event.tick.PlayerTickEvent
 import net.neoforged.neoforge.registries.RegisterEvent
 import skylands.SkylandsCommon.ModId
+import skylands.block.CloudBlock
+import skylands.neoforge.block.CloudBlockNeoForge
 import skylands.platform.SkylandsPlatform
 
 import java.util.function.Supplier
@@ -86,6 +88,8 @@ class NeoForgePlatform(modBus: IEventBus) extends SkylandsPlatform:
       (id, factory.asInstanceOf[() => Block], slot.asInstanceOf[LazyRef[Block]])
     )
     slot
+
+  override def newCloudBlock(): CloudBlock = new CloudBlockNeoForge()
 
   override def registerItem[I <: Item](id: String, factory: () => I): Supplier[I] =
     val slot = new LazyRef[I]

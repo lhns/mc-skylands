@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.entity.{BlockEntity, BlockEntityType}
 import net.minecraft.world.level.chunk.ChunkGenerator
 import net.minecraft.world.level.storage.loot.{LootPool, LootTable}
+import skylands.block.CloudBlock
 
 import java.util.function.Supplier
 
@@ -17,6 +18,12 @@ import java.util.function.Supplier
 // SkylandsCommon.init() runs.
 trait SkylandsPlatform:
   def registerBlock[B <: Block](id: String, factory: () => B): Supplier[B]
+
+  // Cloud block factory — NeoForge returns a subclass overriding the
+  // NeoForge-only `hidesNeighborFace` hook (not present on vanilla Block,
+  // so it can't live in common). Fabric returns the plain CloudBlock and
+  // delegates the same 1.12.2 face-culling logic to a FabricBakedModel.
+  def newCloudBlock(): CloudBlock
 
   def registerItem[I <: Item](id: String, factory: () => I): Supplier[I]
 
