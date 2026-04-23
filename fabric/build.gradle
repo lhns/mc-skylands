@@ -24,6 +24,15 @@ sourceSets {
 }
 
 repositories {
+    // Project-local maven repo holding krysztal-language-scala. maven.krysztal.dev
+    // has had extended 502 outages and the artifact isn't mirrored on Central or
+    // fabricmc.net, so CI can't depend on it being reachable. Gradle checks this
+    // directory first; upstream still listed below for future version bumps
+    // that aren't vendored yet.
+    maven {
+        name = 'Project-local offline maven'
+        url = uri("${rootProject.projectDir}/gradle/offline-maven")
+    }
     maven { url = 'https://maven.krysztal.dev/releases' }
 }
 
