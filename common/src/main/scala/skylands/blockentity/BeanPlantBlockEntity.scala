@@ -21,6 +21,7 @@ class BeanPlantBlockEntity(pos: BlockPos, state: BlockState)
           val gen = beanstalkGenerator match
             case Some(g) => g
             case None =>
+              if sl.dimension() != Level.OVERWORLD then return
               if !fullyEncasedInDirt(sl, pos) then return
               val g = new BeanstalkGenerator(sl, pos)
               beanstalkGenerator = Some(g)
