@@ -4,212 +4,209 @@ import net.minecraft.core.BlockPos
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.tags.BlockTags
+import net.minecraft.util.RandomSource
 import net.minecraft.world.level.block.state.BlockState
 import skylands.block.BeanstalkBlock
 import skylands.registry.{SkylandsBlocks, SkylandsWorldgen}
-import skylands.util.*
 
-// Faithful port of 1.12.2 org.lolhens.skylands.generator.BeanstalkGenerator.
+// Deterministic per-layer beanstalk generator.
 //
-// Grows a wavy, sine-wave-offset beanstalk structure upward from the planted
-// bean, syncing blocks across the Overworld/Skylands seam through
-// BlockArray.syncVertical. The same octave amplitudes, frequency divider
-// decrease, random offset ranges, and recursive branch placement as the
-// original are preserved.
-class BeanstalkGenerator(level: ServerLevel, position: BlockPos) extends StructureGenerator(level, position):
+// The stalk is treated as a 1-D curve indexed by a signed layer offset `p`
+// from the bean's Y. `stalkCenter(p)` gives the spine position at layer p,
+// `thickness(distFromTip)` gives the disk radius a layer of a given age
+// should have, and `drawDisk` paints that disk.
+//
+// Each update advances `progress` by one (new tip), extends the root tip
+// by one (new root layer) up to `rootDepth`, and re-sweeps every
+// still-existing layer redrawing its disk at the thickness its age demands.
+// Thickness grows over time because `distFromTip(p) = progress - |p|`
+// increases with progress for any fixed p. Roots sit at negative `p` and
+// ride the same sine wobble as the trunk.
+//
+// State is `{progress, seed}`, both passed in as constructor parameters:
+// cold start rolls a fresh `seed` from `level.getRandom`; load constructs
+// directly from the persisted NBT. Nothing in this class is mutable-
+// reseeded after construction.
+class BeanstalkGenerator(
+    level: ServerLevel,
+    position: BlockPos,
+    seed: Long,
+    private var progress: Int
+) extends StructureGenerator(level, position):
+
+  // Cold-start convenience: fresh seed, zero progress.
+  def this(level: ServerLevel, position: BlockPos) =
+    this(level, position, level.getRandom.nextLong(), 0)
+
+  // Restore from persisted NBT.
+  def this(level: ServerLevel, position: BlockPos, tag: CompoundTag) =
+    this(level, position, tag.getLong("seed"), tag.getInt("progress"))
+
   private val SkylandsOverlap = 15
 
-  private val syncedWorld: BlockArray = {
+  // Top of the source dimension's build range. Used for the cloud trigger
+  // band, the hard growth cap, and the syncVertical seam when Skylands
+  // is available.
+  private val seamY: Int = level.getMaxBuildHeight - 1
+
+  // Mirror writes into Skylands when the dimension is available, so the
+  // trunk appears continuous across the seam. If Skylands isn't loaded
+  // (e.g. dedicated-server config omitted it), fall back to a single-
+  // level view — writes above the seam noop via forLevel's bounds check.
+  private val syncedWorld: BlockArray =
     val skylands = level.getServer.getLevel(SkylandsWorldgen.SKYLANDS_LEVEL)
     if skylands == null then BlockArray.forLevel(level)
-    else BlockArray.syncVertical(level, skylands, SkylandsOverlap)
-  }
+    else BlockArray.syncVertical(level, skylands, SkylandsOverlap, seamY)
 
-  private val perlinNoiseSLOctaves = 7
-  private val amplitudeMax = 40.0
-  private val octaveDecrease = 1.12
-  private val minSineFreqDivider = 30.0
+  // --- Sine-wobble constants (lifted verbatim from the 1.12.2 port) --------
+
+  private val octaves                 = 7
+  private val amplitudeMax            = 40.0
+  private val octaveDecrease          = 1.12
+  private val minSineFreqDivider      = 30.0
   private val sineFreqDividerDecrease = 0.66
-  private val maxSingleOffsetX = 30
-  private val maxSingleOffsetZ = 30
 
-  // The original uses Scala's global util.Random for per-beanstalk unique offsets;
-  // keep the same non-determinism so each planted bean draws a fresh wobble shape.
-  // These are vars rather than vals so readNbt can overwrite them on reload —
-  // otherwise the wobble shape would rerandomise and the trunk would snap.
-  private var sineLayerAmplitudes: IndexedSeq[Double] =
-    IndexedSeq.tabulate(perlinNoiseSLOctaves)(i =>
-      (scala.util.Random.nextDouble() - 0.5) * amplitudeMax * 2.0 * (1.0 / math.pow(octaveDecrease, i))
+  private val rootDepth       = 5
+  private val cloudBandHeight = 10
+
+  // High-frequency sine used for the per-layer jitter. `jitterFreq`
+  // controls how much the jitter shifts between adjacent layers (radians
+  // per layer). `jitterAmplitude` scales the resulting XZ offset before
+  // rounding to an int — small enough that consecutive shell disks still
+  // overlap so the trunk stays continuous.
+  private val jitterFreq      = 2.0
+  private val jitterAmplitude = 1.2
+
+  // All per-beanstalk randomness comes out of this one RandomSource,
+  // drawn in a fixed order at construction: 7 main-wobble amplitudes,
+  // 7 main-wobble phase offsets, 2 jitter phase offsets. Same `seed` →
+  // same sequence → same stalk, always.
+  private val (amps, offsets, jitterPhases): (Array[Double], Array[Double], Array[Double]) =
+    val r = RandomSource.create(seed)
+    val a = Array.tabulate(octaves)(i =>
+      (r.nextDouble() - 0.5) * amplitudeMax * 2.0 * (1.0 / math.pow(octaveDecrease, i))
     )
-  private var sineLayerOffset: IndexedSeq[Double] =
-    IndexedSeq.tabulate(perlinNoiseSLOctaves)(i =>
-      scala.util.Random.nextDouble() * 2.0 * math.Pi * (minSineFreqDivider - math.pow(sineFreqDividerDecrease, i))
+    val o = Array.tabulate(octaves)(i =>
+      r.nextDouble() * 2.0 * math.Pi *
+        (minSineFreqDivider - math.pow(sineFreqDividerDecrease, i))
     )
+    val j = Array(r.nextDouble() * 2.0 * math.Pi, r.nextDouble() * 2.0 * math.Pi)
+    (a, o, j)
 
-  private val MaxRootDepth: Int = 5
+  // --- Cached block states -------------------------------------------------
 
-  private var progress: Int = 0
-  private var lastBlockPos: BlockPos = position
-
-  private lazy val beanBlock      = SkylandsBlocks.BEAN.get()
-  private lazy val beanstalkBlock = SkylandsBlocks.BEANSTALK.get()
-  private lazy val centerState: BlockState =
+  private val beanstalkBlock = SkylandsBlocks.BEANSTALK.get()
+  private val centerState: BlockState =
     beanstalkBlock.defaultBlockState().setValue(BeanstalkBlock.CENTER, java.lang.Boolean.TRUE)
-  private lazy val shellState: BlockState = beanstalkBlock.defaultBlockState()
+  private val shellState: BlockState = beanstalkBlock.defaultBlockState()
 
-  // The trunk thickens with distance from the growing tip: step 0 is the tip,
-  // step N is N center-blocks away. Same formula for both trunk recursion
-  // and manual root passes.
-  private def shellSizeAt(steps: Int): Int = math.log1p(steps * 1.4).toInt
+  // --- Core functions ------------------------------------------------------
 
-  private def drawBlock(pos: BlockPos, state: BlockState): Unit =
-    if syncedWorld.isReplaceable(pos) || syncedWorld.isTerrainBlock(pos) then
-      syncedWorld.setBlockState(pos, state)
+  // Signed layer index → world position. p = 0 is the bean's own Y
+  // (anchored to `position` exactly — see the -sin(offset_i) / -cos(offset_i)
+  // baseline subtractions, which zero the wobble sum at p=0 without
+  // flattening the shape elsewhere). p < 0 walks down into the roots,
+  // p > 0 climbs the trunk. Per-layer XZ jitter is added on top,
+  // deterministically keyed on (seed, p) so reloads land the same positions.
+  private def stalkCenter(p: Int): BlockPos =
+    var dx = 0.0
+    var dz = 0.0
+    var i  = 0
+    while i < octaves do
+      val d = minSineFreqDivider - math.pow(sineFreqDividerDecrease, i)
+      dx += (math.sin(p.toDouble / d + offsets(i)) - math.sin(offsets(i))) * amps(i)
+      dz += (math.cos(p.toDouble / d + offsets(i)) - math.cos(offsets(i))) * amps(i)
+      i += 1
+    val (jx, jz) = layerJitter(p)
+    position.offset(dx.toInt + jx, p, dz.toInt + jz)
 
-  // Shell draw with a relaxed replacement rule at the base of the stalk.
-  // Everything at y <= bean.y + 1 gets punched through (walls, planks,
-  // deepslate, …) so the dirt encasement and whatever the player built
-  // around it doesn't leave a ring of uncarved material hiding the trunk.
-  // Above that level we fall back to the normal terrain-only rule. The bean
-  // itself and existing beanstalk blocks are always preserved.
-  private def drawShellBlock(pos: BlockPos): Unit =
-    if pos.getY <= position.getY + 1 then
-      val existing = syncedWorld.getBlockState(pos)
-      if !existing.is(beanBlock) && !existing.is(beanstalkBlock) then
-        syncedWorld.setBlockState(pos, shellState)
-    else drawBlock(pos, shellState)
+  // High-frequency sine-noise XZ offset per layer — same wobble idiom
+  // as `stalkCenter`, just with different amplitude/frequency. Anchored
+  // at p=0 via baseline subtraction so no special-case needed for the
+  // bean's layer.
+  private def layerJitter(p: Int): (Int, Int) =
+    val phaseX = jitterPhases(0)
+    val phaseZ = jitterPhases(1)
+    val jx = (math.sin(p * jitterFreq + phaseX) - math.sin(phaseX)) * jitterAmplitude
+    val jz = (math.sin(p * jitterFreq + phaseZ) - math.sin(phaseZ)) * jitterAmplitude
+    (jx.round.toInt, jz.round.toInt)
 
-  // One horizontal disk of shell blocks around `center`, sized per the trunk
-  // thickening formula. Called by both the trunk's recursion and the root
-  // grower.
-  private def drawShellDisk(center: BlockPos, steps: Int): Unit =
-    val size = shellSizeAt(steps)
-    var x = -size
-    while x <= size do
-      var z = -size
-      while z <= size do
-        if new BlockPos(x, 0, z).inSphere(size + 0.1) then
-          drawShellBlock(center.offset(x, 0, z))
-        z += 1
-      x += 1
+  // Number of ticks between this layer's birth and the current tick.
+  // `|p|` works as birth-tick because we extend both tips by one per
+  // update, so layer p is born on tick |p|. Freshly-born layers have
+  // distFromTip = 0, which yields radius 0 via `thickness`.
+  private def distFromTip(p: Int): Int = progress - math.abs(p)
 
-  private def drawLayer(destinationPosition: BlockPos): Unit =
-    val dir = destinationPosition.subtract(lastBlockPos)
-    val rand = level.getRandom
-    val rdDir = dir.offset(
-      rand.nextInt(maxSingleOffsetX) - (maxSingleOffsetX / 2),
-      0,
-      rand.nextInt(maxSingleOffsetZ) - (maxSingleOffsetZ / 2)
-    )
+  // Gradual, log-shaped taper. A layer starts as a single CENTER cell
+  // (radius 0) and fattens as the tip moves away — matches the 1.12.2
+  // feel of `log1p(steps * 1.4)`.
+  private def thickness(distFromTip: Int): Int =
+    if distFromTip <= 0 then 0
+    else math.log1p(distFromTip * 1.4).toInt
 
-    val rdLen =
-      val sqMax = math.max(math.max(rdDir.getX * rdDir.getX, rdDir.getY * rdDir.getY), rdDir.getZ * rdDir.getZ)
-      math.sqrt(sqMax.toDouble)
-    val step = new BlockPos(
-      if rdLen == 0.0 then 0 else math.round(rdDir.getX / rdLen).toInt,
-      1,
-      if rdLen == 0.0 then 0 else math.round(rdDir.getZ / rdLen).toInt
-    )
+  // Beanstalks are allowed to punch through dirt, natural overworld stone,
+  // and our own cloud blocks on top of whatever `BlockArray.isReplaceable`
+  // already allows. The generic predicate stays generic; this widening is
+  // local to this generator.
+  private def canOverwrite(pos: BlockPos): Boolean =
+    if syncedWorld.isReplaceable(pos) then true
+    else
+      val s = syncedWorld.getBlockState(pos)
+      s.is(BlockTags.DIRT)
+        || s.is(BlockTags.BASE_STONE_OVERWORLD)
+        || s.is(SkylandsBlocks.CLOUD.get())
 
-    lastBlockPos = lastBlockPos.offset(step)
+  // One idempotent disk. Cells that fail `canOverwrite` are skipped; the
+  // next update re-attempts the same layer at the same center, so a
+  // transient obstruction is cosmetic rather than structural.
+  private def drawDisk(center: BlockPos, radius: Int, state: BlockState): Unit =
+    if radius <= 0 then
+      if canOverwrite(center) then syncedWorld.setBlockState(center, state)
+    else
+      val r2 = radius * radius
+      var x = -radius
+      while x <= radius do
+        var z = -radius
+        while z <= radius do
+          if x * x + z * z <= r2 then
+            val p = center.offset(x, 0, z)
+            if canOverwrite(p) then syncedWorld.setBlockState(p, state)
+          z += 1
+        x += 1
 
-    drawBlock(lastBlockPos, centerState)
-
-    def recursiveFunction(currentPos: BlockPos, steps: Int): Unit =
-      if steps > 600 then return
-
-      drawShellDisk(currentPos, steps)
-
-      if currentPos.getY >= position.getY then
-        var dx = -1
-        while dx <= 1 do
-          var dz = -1
-          while dz <= 1 do
-            val newPos = currentPos.offset(dx, -1, dz)
-            val bs = syncedWorld.getBlockState(newPos)
-            if bs.is(beanstalkBlock)
-              && bs.getValue(BeanstalkBlock.CENTER).booleanValue()
-              && !newPos.equals(currentPos)
-            then recursiveFunction(newPos, steps + 1)
-            dz += 1
-          dx += 1
-    end recursiveFunction
-
-    recursiveFunction(lastBlockPos, 0)
-
-    if lastBlockPos.getY >= 245 && lastBlockPos.getY <= 255 then
-      new CloudGenerator(level, lastBlockPos)
-
-  // Grow the trunk down into the ground up to MaxRootDepth blocks. The bean
-  // is only allowed to sprout when fully encased in dirt, so rooting is how
-  // the trunk breaks out the underside of that dirt pocket.
-  //
-  // Runs every update (not just once) for two reasons:
-  //   1. The main trunk's recursive shell pass can't cross the bean block
-  //      (the bean is not a beanstalk CENTER so recursion dead-ends at
-  //      `position`). So the roots never get thickened by the normal trunk
-  //      logic — we have to thicken them here.
-  //   2. Shell size is derived from `progress`, matching how the trunk
-  //      gradually fattens up at its base as it grows taller.
-  //
-  // Stops at the bean or anything truly solid (stone, cobble, …). A root
-  // position that already holds beanstalk is left in place (still gets its
-  // shell redrawn); a dirt or replaceable block gets overwritten with a
-  // CENTER beanstalk.
-  private def growRoots(): Unit =
-    // dy=0 is a shell-only pass at the bean's own y: the trunk shells only
-    // reach down to bean.y+1 and the root shells only up to bean.y-1, so
-    // without this the bean sits in an untouched ring of whatever. The
-    // shell helper preserves the bean itself, so it's safe unconditionally.
-    var dy = 0
-    while dy <= MaxRootDepth do
-      val rootPos = position.below(dy)
-
-      if dy > 0 then
-        val existing = syncedWorld.getBlockState(rootPos)
-        if existing.is(beanBlock) then return
-        if !existing.is(beanstalkBlock) then
-          if !(existing.is(BlockTags.DIRT) || syncedWorld.isReplaceable(rootPos)) then return
-          syncedWorld.setBlockState(rootPos, centerState)
-
-      drawShellDisk(rootPos, progress + math.max(dy, 1))
-
-      dy += 1
+  // --- Tick ----------------------------------------------------------------
 
   override def update(): Unit =
-    growRoots()
-
-    var xOffset = 0.0
-    var zOffset = 0.0
-    var i = 0
-    while i < perlinNoiseSLOctaves do
-      val amp = sineLayerAmplitudes(i)
-      val offset = sineLayerOffset(i)
-      val divider = minSineFreqDivider - math.pow(sineFreqDividerDecrease, i)
-      xOffset += math.sin(progress.toDouble / divider + offset) * amp
-      zOffset += math.cos(progress.toDouble / divider + offset) * amp
-      i += 1
-
-    val destinationPosition = position.offset(xOffset.toInt, progress + 3, zOffset.toInt)
-
-    if destinationPosition.getY > 430 then
+    // Hard cap: tip reached the top of the source dimension. Replace the
+    // bean with a plain stem block so the trunk reads as continuous at
+    // ground level and the BlockEntity stops ticking (different block =
+    // no more serverTick).
+    if stalkCenter(progress).getY > seamY then
       level.setBlock(position, shellState, 3)
-
-    drawLayer(destinationPosition)
+      return
 
     progress += 1
 
-  // NBT round-trip for persistence. NBT has no DoubleArray tag in 1.21.1, so
-  // the sine arrays travel as raw double bits in a LongArray — exact round
-  // trip, small fixed length (perlinNoiseSLOctaves = 7).
+    // Both tips grow with progress: trunk goes up to p = progress, root
+    // goes down to p = -min(progress, rootDepth). New layers start at
+    // distFromTip = 0 (single CENTER cell) and thicken on later ticks.
+    // p = 0 is skipped so the bean itself is never boxed in by a shell
+    // disk at its own Y — the bean is the visual anchor there.
+    val rootFloor = -math.min(progress, rootDepth)
+    var p = rootFloor
+    while p <= progress do
+      if p != 0 then
+        val center = stalkCenter(p)
+        drawDisk(center, thickness(distFromTip(p)), shellState)
+        if canOverwrite(center) then syncedWorld.setBlockState(center, centerState)
+      p += 1
+
+    val newTip = stalkCenter(progress)
+    if newTip.getY >= seamY - cloudBandHeight && newTip.getY <= seamY then
+      new CloudGenerator(level, newTip)
+
+  // --- NBT -----------------------------------------------------------------
+
   def writeNbt(tag: CompoundTag): Unit =
     tag.putInt("progress", progress)
-    tag.putLong("lastBlockPos", lastBlockPos.asLong())
-    tag.putLongArray("sineAmp", sineLayerAmplitudes.map(java.lang.Double.doubleToRawLongBits).toArray)
-    tag.putLongArray("sineOff", sineLayerOffset.map(java.lang.Double.doubleToRawLongBits).toArray)
-
-  def readNbt(tag: CompoundTag): Unit =
-    progress = tag.getInt("progress")
-    lastBlockPos = BlockPos.of(tag.getLong("lastBlockPos"))
-    sineLayerAmplitudes = tag.getLongArray("sineAmp").toIndexedSeq.map(java.lang.Double.longBitsToDouble)
-    sineLayerOffset = tag.getLongArray("sineOff").toIndexedSeq.map(java.lang.Double.longBitsToDouble)
+    tag.putLong("seed", seed)

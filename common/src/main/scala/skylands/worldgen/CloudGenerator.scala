@@ -12,11 +12,12 @@ import scala.util.Random
 // across the Overworld/Skylands seam.
 class CloudGenerator(level: ServerLevel, position: BlockPos) extends StructureGenerator(level, position):
   private val SkylandsOverlap = 15
+  private val seamY: Int = level.getMaxBuildHeight - 1
 
   private val syncedWorld: BlockArray = {
     val skylands = level.getServer.getLevel(SkylandsWorldgen.SKYLANDS_LEVEL)
     if skylands == null then BlockArray.forLevel(level)
-    else BlockArray.syncVertical(level, skylands, SkylandsOverlap)
+    else BlockArray.syncVertical(level, skylands, SkylandsOverlap, seamY)
   }
 
   private val random = new Random(level.getSeed + position.getX + position.getZ.toLong * position.getY.toLong)

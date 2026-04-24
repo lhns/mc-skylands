@@ -32,14 +32,13 @@ class BeanPlantBlockEntity(pos: BlockPos, state: BlockState)
                   // Restore path: save file is authoritative, skip the
                   // dimension/dirt gates. Matches the "keep ticking once
                   // started" rule the in-memory path already follows.
-                  val g = new BeanstalkGenerator(sl, pos)
-                  g.readNbt(nbt)
+                  val g = new BeanstalkGenerator(sl, pos, nbt)
                   beanstalkGenerator = Some(g)
                   pendingGeneratorNbt = None
                   g
                 case None =>
                   if sl.dimension() != Level.OVERWORLD then return
-                  if !fullyEncasedInDirt(sl, pos) then return
+                  if !fullyEncased(sl, pos) then return
                   val g = new BeanstalkGenerator(sl, pos)
                   beanstalkGenerator = Some(g)
                   g
@@ -47,16 +46,19 @@ class BeanPlantBlockEntity(pos: BlockPos, state: BlockState)
           setChanged()
       case _ => ()
 
-  // Gate generator creation on the bean being fully packed in dirt on all six
-  // sides. Uses BlockTags.DIRT so coarse dirt / grass block / podzol / rooted
-  // dirt / mycelium / mud / moss block count too. Only gates the initial
-  // spawn — once the beanstalk has started growing we keep ticking even if a
-  // neighbour gets mined out.
-  private def fullyEncasedInDirt(level: ServerLevel, pos: BlockPos): Boolean =
+  // Gate generator creation on the bean being fully packed in natural
+  // overworld terrain on all six sides — dirt (BlockTags.DIRT: also coarse
+  // dirt, grass block, podzol, rooted dirt, mycelium, mud, moss block) or
+  // stone (BlockTags.BASE_STONE_OVERWORLD: stone, granite, diorite,
+  // andesite, tuff, deepslate). Mirrors the generator's own overwrite set.
+  // Only gates the initial spawn — once the beanstalk has started growing
+  // we keep ticking even if a neighbour gets mined out.
+  private def fullyEncased(level: ServerLevel, pos: BlockPos): Boolean =
     val dirs = Direction.values
     var i = 0
     while i < dirs.length do
-      if !level.getBlockState(pos.relative(dirs(i))).is(BlockTags.DIRT) then return false
+      val s = level.getBlockState(pos.relative(dirs(i)))
+      if !(s.is(BlockTags.DIRT) || s.is(BlockTags.BASE_STONE_OVERWORLD)) then return false
       i += 1
     true
 
