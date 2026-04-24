@@ -1,0 +1,10 @@
+{
+  "type": "skylands:skylands",
+  "generator": {
+    "type": "skylands:skylands",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "skylands:skylands"
+    }
+  }
+}

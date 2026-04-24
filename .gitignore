@@ -9,6 +9,8 @@
 *.jar
 *.war
 *.ear
+## Vendored mod deps (project-local maven repo for artifacts with unreliable upstreams)
+!/gradle/offline-maven/**/*.jar
 
 ## virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
@@ -44,9 +46,20 @@ project/plugins/project/
 .lib/
 
 
+### Claude Code local state ###
+.claude/
+
 ### Gradle ###
 .gradle
 build/
+
+## Datagen provenance cache — Fabric's DataProvider writes timestamps here on
+## every run. Committing it would make CI's datagen-up-to-date diff fail.
+common/src/main/generated/.cache/
+
+## Per-loader runClient / runGameTest working dirs
+fabric/run/
+neoforge/run/
 
 ## Gradle GUI config
 gradle-app.setting

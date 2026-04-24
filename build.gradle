@@ -1,44 +1,41 @@
-buildscript {
+// Root build: per-subproject plugins are applied in each subproject's build.gradle
+// (fabric-loom for common/fabric, net.neoforged.moddev for neoforge). The root
+// only applies the cross-cutting Java/Scala toolchain + repositories.
+//
+// The `idea` plugin is needed on the root because fabric-loom configures
+// `ideaProject` to wire up run configurations. Without it, loom errors at
+// plugin-apply time.
+plugins {
+    id 'idea'
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'scala'
+
+    base {
+        archivesName = "${rootProject.archives_base_name}-${project.name}"
+    }
+    version = rootProject.mod_version
+    group = rootProject.maven_group
+
     repositories {
-        jcenter()
-        maven { url = "https://artifactory.lolhens.de/artifactory/maven-public/" }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-    }
-}
-
-apply plugin: 'net.minecraftforge.gradle.forge'
-apply plugin: 'scala'
-apply plugin: 'idea'
-apply plugin: 'eclipse'
-
-sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
-
-minecraft {
-    version = version_minecraft + "-" + version_forge
-    if (project.hasProperty("version_mappings")) mappings = version_mappings
-    runDir = "build/run"
-}
-
-processResources {
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-
-        // replace version and mcversion
-        expand 'version': project.version, 'mcversion': project.minecraft.version
+        maven { url = 'https://maven.fabricmc.net/' }
+        maven { url = 'https://maven.neoforged.net/releases/' }
+        mavenCentral()
     }
 
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
+    java {
+        toolchain { languageVersion = JavaLanguageVersion.of(21) }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = 21
+    }
+
+    tasks.withType(ScalaCompile).configureEach {
+        scalaCompileOptions.encoding = 'UTF-8'
+        scalaCompileOptions.additionalParameters = ['-release', '21']
     }
 }

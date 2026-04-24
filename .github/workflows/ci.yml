@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [master, 'arch-*', 'multi-*']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # Datagen gate: re-run data generation and fail if the output differs
+      # from what's committed under common/src/main/generated/. Catches
+      # accidental hand-edits of generated JSONs and drift between providers
+      # and output.
+      - name: Verify datagen output is up-to-date
+        run: |
+          ./gradlew :fabric:runDatagen --no-daemon
+          if ! git diff --quiet --exit-code common/src/main/generated/; then
+            echo "::error::runDatagen produced output that differs from what's committed."
+            echo "Run './gradlew :fabric:runDatagen' locally and commit common/src/main/generated/."
+            git --no-pager diff common/src/main/generated/
+            exit 1
+          fi
+
+      # Three gates, cheapest first:
+      #   1. :common:test  — JUnit 5 tier, ~2s actual test time, no server boot.
+      #   2. :fabric:runGameTest — boots a headless MC server, runs the 3
+      #      FabricGameTest methods, exits with code = failure count. Task
+      #      name comes from loom.runs.gameTest config in fabric/build.gradle.
+      #   3. :neoforge:runGameTestServer — same for NeoForge; task name is
+      #      MDG's native naming for a `type = 'gameTestServer'` run.
+      - name: Run all three test gates
+        run: ./gradlew :common:test :fabric:runGameTest :neoforge:runGameTestServer --no-daemon --stacktrace
+
+      - name: Upload JUnit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-reports
+          path: common/build/reports/tests/
+          if-no-files-found: ignore
+
+      - name: Upload gametest reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gametest-reports
+          path: |
+            fabric/build/gametest/
+            neoforge/build/gametest/
+          if-no-files-found: ignore

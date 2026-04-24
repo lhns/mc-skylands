@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "Skylands",
+  "description": "Adds a Skylands dimension reachable by climbing a beanstalk through the clouds.",
+  "authors": ["lhns"],
+  "contact": {
+    "homepage": "https://github.com/lhns/mc-skylands",
+    "sources": "https://github.com/lhns/mc-skylands",
+    "issues": "https://github.com/lhns/mc-skylands/issues"
+  },
+  "license": "Apache-2.0",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      {
+        "adapter": "scala",
+        "value": "skylands.fabric.SkylandsFabric"
+      }
+    ],
+    "client": [
+      {
+        "adapter": "scala",
+        "value": "skylands.fabric.SkylandsFabricClient"
+      }
+    ],
+    "fabric-gametest": [
+      "skylands.fabric.gametest.FabricGameTests"
+    ],
+    "fabric-datagen": [
+      {
+        "adapter": "scala",
+        "value": "skylands.fabric.datagen.SkylandsDataGen"
+      }
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*",
+    "krysztal-language-scala": ">=3.3.0"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "has_precipitation": false,
+  "temperature": 0.8,
+  "downfall": 0.4,
+  "effects": {
+    "sky_color": 7907327,
+    "fog_color": 12638463,
+    "water_color": 4159204,
+    "water_fog_color": 329011,
+    "mood_sound": {
+      "sound": "minecraft:ambient.cave",
+      "tick_delay": 6000,
+      "block_search_extent": 8,
+      "offset": 2.0
+    }
+  },
+  "spawners": {
+    "monster": [],
+    "creature": [
+      { "type": "minecraft:chicken", "weight": 10, "minCount": 4, "maxCount": 4 }
+    ],
+    "ambient": [],
+    "axolotls": [],
+    "underground_water_creature": [],
+    "water_creature": [],
+    "water_ambient": [],
+    "misc": []
+  },
+  "spawn_costs": {},
+  "carvers": {},
+  "features": [
+    [],
+    ["skylands:lake_water", "skylands:lake_lava"],
+    [],
+    ["skylands:monster_room"],
+    [],
+    [],
+    [
+      "skylands:ore_coal",
+      "skylands:ore_iron",
+      "skylands:ore_gold",
+      "skylands:ore_redstone",
+      "skylands:ore_diamond",
+      "skylands:ore_lapis",
+      "skylands:ore_dirt",
+      "skylands:ore_gravel",
+      "skylands:ore_clay"
+    ],
+    [],
+    ["skylands:spring_water", "skylands:spring_lava"],
+    [
+      "skylands:flower_plain",
+      "skylands:brown_mushroom",
+      "skylands:red_mushroom",
+      "skylands:sugar_cane",
+      "skylands:pumpkin"
+    ],
+    []
+  ]
+}

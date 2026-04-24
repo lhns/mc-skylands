@@ -1,0 +1,79 @@
+plugins {
+    id 'net.neoforged.moddev' version "${moddevgradle_version}"
+    id 'scala'
+}
+
+// Inline common sources — same pattern as fabric/. MDG reads sourceSets
+// verbatim without the architectury-transformer pipeline.
+sourceSets {
+    main {
+        scala.srcDirs += project(':common').file('src/main/scala')
+        java.srcDirs  += project(':common').file('src/main/java')
+        resources.srcDirs += project(':common').file('src/main/resources')
+        resources.srcDirs += project(':common').file('src/main/generated')
+    }
+}
+
+repositories {
+    maven { name = 'Kotori316 Maven'; url = 'https://maven.kotori316.com' }
+}
+
+neoForge {
+    version = rootProject.neoforge_version
+
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            // Scope gametest discovery to our namespace so other mods' tests
+            // don't run (and fail) alongside ours.
+            systemProperty 'neoforge.enabledGameTestNamespaces', rootProject.mod_id
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    // Scala 3 language provider. Pattern lifted from Pierre's mc-fluid-physics
+    // (neoforge-1.21.1/build.gradle) which solved the same JPMS collision we'd
+    // otherwise hit any time a user installs another Scala-backed mod (SCF's
+    // module exports scala.quoted.runtime to org.scala.lang.scala3.library and
+    // a JiJ'd scala3-library_3 owns that package — split-package, mod layer
+    // refused).
+    //   - `:with-library` classifier: scala2 + scala3 + cats merged flat into
+    //     one JPMS module (`kotori_scala`). The plain classifier is jar-in-jar
+    //     and recreates the collision.
+    //   - transitive=false: SCF's POM otherwise re-adds scala3-library_3 as a
+    //     separate jar, producing duplicate modules on the runtime classpath.
+    //   - `modLoader = "kotori_scala"` in neoforge.mods.toml enforces SCF's
+    //     presence; no `[[dependencies]]` block for SCF (it's FMLModType=LIBRARY
+    //     with no registered mod id, so a dep check against it would fail).
+    runtimeOnly("com.kotori316:scalablecatsforce-neoforge:${rootProject.scf_neoforge_version}:with-library") {
+        transitive = false
+    }
+
+    // Compile against scala3-library directly; SCF provides it at runtime in
+    // both production and MDG dev runs (it's a real mod, MDG auto-promotes it
+    // to the transforming classpath — unlike a plain library that needed the
+    // `additionalRuntimeClasspath` escape hatch we used to need with jarJar).
+    compileOnly "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
+}
+
+processResources {
+    inputs.property 'mod_version', rootProject.mod_version
+    inputs.property 'mod_id', rootProject.mod_id
+
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand 'mod_version': rootProject.mod_version, 'mod_id': rootProject.mod_id
+    }
+}

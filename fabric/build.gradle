@@ -1,0 +1,89 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.fabricmc.net/' }
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath "net.fabricmc:fabric-loom:${rootProject.fabric_loom_version}"
+    }
+}
+
+apply plugin: 'fabric-loom'
+apply plugin: 'scala'
+
+// MultiLoader-Template: inline shared common sources directly. Both loaders
+// compile against Mojmap + Scala 3 stdlib, so the common sources compile
+// identically in each build — no separate common jar, no shadow.
+sourceSets {
+    main {
+        scala.srcDirs += project(':common').file('src/main/scala')
+        java.srcDirs  += project(':common').file('src/main/java')
+        resources.srcDirs += project(':common').file('src/main/resources')
+        resources.srcDirs += project(':common').file('src/main/generated')
+    }
+}
+
+repositories {
+    // Project-local maven repo holding krysztal-language-scala. maven.krysztal.dev
+    // has had extended 502 outages and the artifact isn't mirrored on Central or
+    // fabricmc.net, so CI can't depend on it being reachable. Gradle checks this
+    // directory first; upstream still listed below for future version bumps
+    // that aren't vendored yet.
+    maven {
+        name = 'Project-local offline maven'
+        url = uri("${rootProject.projectDir}/gradle/offline-maven")
+    }
+    maven { url = 'https://maven.krysztal.dev/releases' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+    modImplementation "dev.krysztal:krysztal-language-scala:${rootProject.kls_version}+scala.${rootProject.kls_scala_version}"
+
+    implementation "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
+}
+
+processResources {
+    inputs.property 'mod_version', rootProject.mod_version
+    inputs.property 'mod_id', rootProject.mod_id
+
+    filesMatching('fabric.mod.json') {
+        expand 'mod_version': rootProject.mod_version, 'mod_id': rootProject.mod_id
+    }
+}
+
+// Declare the gametest run manually — plain Fabric Loom 1.7 does not auto-create
+// one from the fabric-gametest-api-v1 dep (that was Architectury Loom's
+// `fabricApi.configureTests { }` convenience). Task: `runGameTest`. Pattern
+// lifted from fabric-api's own build.gradle on the 1.21 branch.
+loom {
+    runs {
+        gameTest {
+            server()
+            name = 'Game Test'
+            vmArg '-Dfabric-api.gametest'
+            vmArg "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml"
+            runDir 'build/gametest'
+        }
+    }
+}
+
+// Datagen: outputs block states, block/item models, loot tables, and lang
+// JSONs from SkylandsDataGen into common/src/main/generated. Both loaders'
+// source sets inline that path, so the same generated JSONs feed Fabric and
+// NeoForge. The dimension/dimension_type/pack.mcmeta/empty.nbt files stay
+// hand-written (worldgen-bootstrap-registry datagen is more involved and
+// low-ROI for three entries).
+fabricApi {
+    configureDataGeneration {
+        modId = rootProject.mod_id
+        outputDirectory = project(':common').file('src/main/generated')
+        createSourceSet = false
+        addToResources = false
+        strictValidation = true
+    }
+}
