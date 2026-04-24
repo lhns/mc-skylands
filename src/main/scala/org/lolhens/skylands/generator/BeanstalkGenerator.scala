@@ -38,34 +38,46 @@ class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends Structu
       syncedWorld.setBlockState(position, blockState)
 
   private def drawLayer(destinationPosition: BlockPos) = {
-    val direction = destinationPosition.subtract(lastBlockPos)
-    val rdDirection = direction.add(world.rand.nextInt(maxSingleOffsetX) - (maxSingleOffsetX / 2), 0, world.rand.nextInt(maxSingleOffsetZ) - maxSingleOffsetZ / 2)
+    // offset block by 1 in Y and in XZ plane by a random amount weighted by the XZ groth direction
+    {
+      val direction = destinationPosition.subtract(lastBlockPos)
+      val rdDirection = direction.add(world.rand.nextInt(maxSingleOffsetX) - (maxSingleOffsetX / 2), 0, world.rand.nextInt(maxSingleOffsetZ) - maxSingleOffsetZ / 2)
 
-    val rdLength = Math.sqrt(Seq(rdDirection.getX * rdDirection.getX, rdDirection.getY * rdDirection.getY, rdDirection.getZ * rdDirection.getZ).max)
-    val rdDirectionNorm = new BlockPos((rdDirection.getX / rdLength).round, 1, (rdDirection.getZ / rdLength).round)
+      val rdLength = Math.sqrt(Seq(rdDirection.getX * rdDirection.getX, rdDirection.getY * rdDirection.getY, rdDirection.getZ * rdDirection.getZ).max)
+      val rdDirectionNorm = new BlockPos((rdDirection.getX / rdLength).round, 1, (rdDirection.getZ / rdLength).round)
 
-    lastBlockPos = lastBlockPos.add(rdDirectionNorm)
+      lastBlockPos = lastBlockPos.add(rdDirectionNorm)
+    }
 
+    // place stem center (at XZ offset above the last one)
     drawBlock(lastBlockPos, SkylandsMod.skylands.blockBeanStem.getDefaultState.withProperty(BlockBeanStem.isCenter, Boolean.box(true)))
 
+    // steps decides the stem thickness
     def recursiveFunction(currentPos: BlockPos, steps: Int = 0): Unit = {
+      
       if (steps > 600) return
       val size = math.log1p(steps * 1.4).toInt
 
+      // draw stem disk around stem center
       for (x <- -size to size; z <- -size to size)
         if (new BlockPos(x, 0, z).inSphere(size + 0.1))
+          // won't override existing stem blocks and will therefore leave stem center untouched
           drawBlock(currentPos.add(x, 0, z), SkylandsMod.skylands.blockBeanStem.getDefaultState)
 
+      // don't execute this if it was called from this "thickness increase" recursion call
       if (currentPos.getY >= position.getY) {
+        // find bean stalk center below and increase the stalks thickness
         for (x <- -1 to 1; z <- -1 to 1) {
           val newPos = currentPos.add(x, -1, z)
           val bs = syncedWorld.getBlockState(newPos)
           if (bs.getBlock == SkylandsMod.skylands.blockBeanStem && bs.getValue(BlockBeanStem.isCenter) && newPos != currentPos)
+            // "thickness increase" recursion call
             recursiveFunction(newPos, steps + 1)
         }
       }
     }
 
+    // draw the layer above
     recursiveFunction(lastBlockPos)
 
     if (lastBlockPos.getY >= 245 && lastBlockPos.getY <= 255)
@@ -73,24 +85,30 @@ class BeanstalkGenerator(world: WorldServer, position: BlockPos) extends Structu
   }
 
   override def update(): Unit = {
-    val xOffset = sineLayerAmplitudes.zip(sineLayerOffset).zipWithIndex.map {
-      case ((ampl, offset), index) =>
-        //println((ampl, offset, index))
-        Math.sin(progress.toDouble / (minSineFreqDivider - math.pow(sineFreqDividerDecrease, index)) + offset) * ampl
-    }.sum
+    // generate spiralling offset (created by Th3Falc0n)
+    val destinationPosition = {
+      val xOffset = sineLayerAmplitudes.zip(sineLayerOffset).zipWithIndex.map {
+        case ((ampl, offset), index) =>
+          //println((ampl, offset, index))
+          Math.sin(progress.toDouble / (minSineFreqDivider - math.pow(sineFreqDividerDecrease, index)) + offset) * ampl
+      }.sum
 
-    val zOffset = sineLayerAmplitudes.zip(sineLayerOffset).zipWithIndex.map {
-      case ((ampl, offset), index) =>
-        Math.cos(progress.toDouble / (minSineFreqDivider - math.pow(sineFreqDividerDecrease, index)) + offset) * ampl
-    }.sum
+      val zOffset = sineLayerAmplitudes.zip(sineLayerOffset).zipWithIndex.map {
+        case ((ampl, offset), index) =>
+          Math.cos(progress.toDouble / (minSineFreqDivider - math.pow(sineFreqDividerDecrease, index)) + offset) * ampl
+      }.sum
+    
+      // why y offset 3 ?
+      position.add(xOffset, progress + 3, zOffset)
+    }
 
-    val destinationPosition = position.add(xOffset, progress + 3, zOffset)
-
+    // self destruct bean block after growing to 430 blocks tall
     if (destinationPosition.getY > 430)
       world.setBlockState(position, SkylandsMod.skylands.blockBeanStem.getDefaultState)
 
     drawLayer(destinationPosition)
 
+    // increment y
     progress += 1
   }
 }
