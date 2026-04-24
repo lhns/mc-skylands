@@ -2,6 +2,7 @@ package skylands.worldgen
 
 import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.tags.BlockTags
 import net.minecraft.world.level.block.state.BlockState
 import skylands.block.BeanstalkBlock
 import skylands.registry.{SkylandsBlocks, SkylandsWorldgen}
@@ -42,12 +43,52 @@ class BeanstalkGenerator(level: ServerLevel, position: BlockPos) extends Structu
       scala.util.Random.nextDouble() * 2.0 * math.Pi * (minSineFreqDivider - math.pow(sineFreqDividerDecrease, i))
     )
 
+  private val MaxRootDepth: Int = 5
+
   private var progress: Int = 0
   private var lastBlockPos: BlockPos = position
+
+  private lazy val beanBlock      = SkylandsBlocks.BEAN.get()
+  private lazy val beanstalkBlock = SkylandsBlocks.BEANSTALK.get()
+  private lazy val centerState: BlockState =
+    beanstalkBlock.defaultBlockState().setValue(BeanstalkBlock.CENTER, java.lang.Boolean.TRUE)
+  private lazy val shellState: BlockState = beanstalkBlock.defaultBlockState()
+
+  // The trunk thickens with distance from the growing tip: step 0 is the tip,
+  // step N is N center-blocks away. Same formula for both trunk recursion
+  // and manual root passes.
+  private def shellSizeAt(steps: Int): Int = math.log1p(steps * 1.4).toInt
 
   private def drawBlock(pos: BlockPos, state: BlockState): Unit =
     if syncedWorld.isReplaceable(pos) || syncedWorld.isTerrainBlock(pos) then
       syncedWorld.setBlockState(pos, state)
+
+  // Shell draw with a relaxed replacement rule at the base of the stalk.
+  // Everything at y <= bean.y + 1 gets punched through (walls, planks,
+  // deepslate, …) so the dirt encasement and whatever the player built
+  // around it doesn't leave a ring of uncarved material hiding the trunk.
+  // Above that level we fall back to the normal terrain-only rule. The bean
+  // itself and existing beanstalk blocks are always preserved.
+  private def drawShellBlock(pos: BlockPos): Unit =
+    if pos.getY <= position.getY + 1 then
+      val existing = syncedWorld.getBlockState(pos)
+      if !existing.is(beanBlock) && !existing.is(beanstalkBlock) then
+        syncedWorld.setBlockState(pos, shellState)
+    else drawBlock(pos, shellState)
+
+  // One horizontal disk of shell blocks around `center`, sized per the trunk
+  // thickening formula. Called by both the trunk's recursion and the root
+  // grower.
+  private def drawShellDisk(center: BlockPos, steps: Int): Unit =
+    val size = shellSizeAt(steps)
+    var x = -size
+    while x <= size do
+      var z = -size
+      while z <= size do
+        if new BlockPos(x, 0, z).inSphere(size + 0.1) then
+          drawShellBlock(center.offset(x, 0, z))
+        z += 1
+      x += 1
 
   private def drawLayer(destinationPosition: BlockPos): Unit =
     val dir = destinationPosition.subtract(lastBlockPos)
@@ -69,24 +110,12 @@ class BeanstalkGenerator(level: ServerLevel, position: BlockPos) extends Structu
 
     lastBlockPos = lastBlockPos.offset(step)
 
-    val centerState: BlockState =
-      SkylandsBlocks.BEANSTALK.get().defaultBlockState().setValue(BeanstalkBlock.CENTER, java.lang.Boolean.TRUE)
-    val shellState: BlockState = SkylandsBlocks.BEANSTALK.get().defaultBlockState()
-
     drawBlock(lastBlockPos, centerState)
 
     def recursiveFunction(currentPos: BlockPos, steps: Int): Unit =
       if steps > 600 then return
-      val size = math.log1p(steps * 1.4).toInt
 
-      var x = -size
-      while x <= size do
-        var z = -size
-        while z <= size do
-          if new BlockPos(x, 0, z).inSphere(size + 0.1) then
-            drawBlock(currentPos.offset(x, 0, z), shellState)
-          z += 1
-        x += 1
+      drawShellDisk(currentPos, steps)
 
       if currentPos.getY >= position.getY then
         var dx = -1
@@ -95,7 +124,7 @@ class BeanstalkGenerator(level: ServerLevel, position: BlockPos) extends Structu
           while dz <= 1 do
             val newPos = currentPos.offset(dx, -1, dz)
             val bs = syncedWorld.getBlockState(newPos)
-            if bs.is(SkylandsBlocks.BEANSTALK.get())
+            if bs.is(beanstalkBlock)
               && bs.getValue(BeanstalkBlock.CENTER).booleanValue()
               && !newPos.equals(currentPos)
             then recursiveFunction(newPos, steps + 1)
@@ -108,7 +137,45 @@ class BeanstalkGenerator(level: ServerLevel, position: BlockPos) extends Structu
     if lastBlockPos.getY >= 245 && lastBlockPos.getY <= 255 then
       new CloudGenerator(level, lastBlockPos)
 
+  // Grow the trunk down into the ground up to MaxRootDepth blocks. The bean
+  // is only allowed to sprout when fully encased in dirt, so rooting is how
+  // the trunk breaks out the underside of that dirt pocket.
+  //
+  // Runs every update (not just once) for two reasons:
+  //   1. The main trunk's recursive shell pass can't cross the bean block
+  //      (the bean is not a beanstalk CENTER so recursion dead-ends at
+  //      `position`). So the roots never get thickened by the normal trunk
+  //      logic — we have to thicken them here.
+  //   2. Shell size is derived from `progress`, matching how the trunk
+  //      gradually fattens up at its base as it grows taller.
+  //
+  // Stops at the bean or anything truly solid (stone, cobble, …). A root
+  // position that already holds beanstalk is left in place (still gets its
+  // shell redrawn); a dirt or replaceable block gets overwritten with a
+  // CENTER beanstalk.
+  private def growRoots(): Unit =
+    // dy=0 is a shell-only pass at the bean's own y: the trunk shells only
+    // reach down to bean.y+1 and the root shells only up to bean.y-1, so
+    // without this the bean sits in an untouched ring of whatever. The
+    // shell helper preserves the bean itself, so it's safe unconditionally.
+    var dy = 0
+    while dy <= MaxRootDepth do
+      val rootPos = position.below(dy)
+
+      if dy > 0 then
+        val existing = syncedWorld.getBlockState(rootPos)
+        if existing.is(beanBlock) then return
+        if !existing.is(beanstalkBlock) then
+          if !(existing.is(BlockTags.DIRT) || syncedWorld.isReplaceable(rootPos)) then return
+          syncedWorld.setBlockState(rootPos, centerState)
+
+      drawShellDisk(rootPos, progress + math.max(dy, 1))
+
+      dy += 1
+
   override def update(): Unit =
+    growRoots()
+
     var xOffset = 0.0
     var zOffset = 0.0
     var i = 0
@@ -123,7 +190,7 @@ class BeanstalkGenerator(level: ServerLevel, position: BlockPos) extends Structu
     val destinationPosition = position.offset(xOffset.toInt, progress + 3, zOffset.toInt)
 
     if destinationPosition.getY > 430 then
-      level.setBlock(position, SkylandsBlocks.BEANSTALK.get().defaultBlockState(), 3)
+      level.setBlock(position, shellState, 3)
 
     drawLayer(destinationPosition)
 
