@@ -52,12 +52,15 @@ class CloudBlock extends Block(CloudBlock.Properties):
 
   private def tryTeleportToSkylands(player: ServerPlayer, level: ServerLevel, cloudPos: BlockPos): Unit =
     if level.dimension() != Level.OVERWORLD then return
-    if cloudPos.getY < TeleportMinY then return
+    val seamY = level.getMaxBuildHeight - 1
+    //if cloudPos.getY < seamY - CloudBandHeight then return
+    if cloudPos.getY < TeleportMinY then return // TODO
     val playerPos = player.blockPosition()
     if !isNearBeanstalk(level, playerPos, BeanstalkSearchRadius) then return
 
-    // 1.12.2 offset: playerPos.add(0, skylandsOverlap - 255, 0) — y=250 lands at y=10 in Skylands.
-    val targetY = playerPos.getY + SkylandsOverlap - 255
+    // Seam maps the overworld's top to `SkylandsOverlap` blocks above
+    // Skylands's floor. At playerY = seamY, targetY = SkylandsOverlap.
+    val targetY = playerPos.getY + SkylandsOverlap - 255 //seamY
     SkylandsTeleport.teleportPlayer(
       player,
       SkylandsWorldgen.SKYLANDS_LEVEL,
@@ -78,9 +81,12 @@ class CloudBlock extends Block(CloudBlock.Properties):
     false
 
 object CloudBlock:
-  private val TeleportMinY: Int = 250
   private val BeanstalkSearchRadius: Int = 20
   private val SkylandsOverlap: Int = 15
+  // Clouds at `y ∈ [seamY - CloudBandHeight, seamY]` are teleport-capable.
+  // Matches the band BeanstalkGenerator uses to spawn cloud clusters.
+  private val CloudBandHeight: Int = 10
+  private val TeleportMinY: Int = 250
 
   // Port of 1.12.2 BlockCloud.shouldSideBeRendered — returns whether the face
   // of the rendered cloud at `selfPos` in direction `faceDir` should be culled
