@@ -1,6 +1,7 @@
 package skylands.worldgen
 
 import net.minecraft.core.BlockPos
+import net.minecraft.nbt.CompoundTag
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.tags.BlockTags
 import net.minecraft.world.level.block.state.BlockState
@@ -34,11 +35,13 @@ class BeanstalkGenerator(level: ServerLevel, position: BlockPos) extends Structu
 
   // The original uses Scala's global util.Random for per-beanstalk unique offsets;
   // keep the same non-determinism so each planted bean draws a fresh wobble shape.
-  private val sineLayerAmplitudes: IndexedSeq[Double] =
+  // These are vars rather than vals so readNbt can overwrite them on reload —
+  // otherwise the wobble shape would rerandomise and the trunk would snap.
+  private var sineLayerAmplitudes: IndexedSeq[Double] =
     IndexedSeq.tabulate(perlinNoiseSLOctaves)(i =>
       (scala.util.Random.nextDouble() - 0.5) * amplitudeMax * 2.0 * (1.0 / math.pow(octaveDecrease, i))
     )
-  private val sineLayerOffset: IndexedSeq[Double] =
+  private var sineLayerOffset: IndexedSeq[Double] =
     IndexedSeq.tabulate(perlinNoiseSLOctaves)(i =>
       scala.util.Random.nextDouble() * 2.0 * math.Pi * (minSineFreqDivider - math.pow(sineFreqDividerDecrease, i))
     )
@@ -195,3 +198,18 @@ class BeanstalkGenerator(level: ServerLevel, position: BlockPos) extends Structu
     drawLayer(destinationPosition)
 
     progress += 1
+
+  // NBT round-trip for persistence. NBT has no DoubleArray tag in 1.21.1, so
+  // the sine arrays travel as raw double bits in a LongArray — exact round
+  // trip, small fixed length (perlinNoiseSLOctaves = 7).
+  def writeNbt(tag: CompoundTag): Unit =
+    tag.putInt("progress", progress)
+    tag.putLong("lastBlockPos", lastBlockPos.asLong())
+    tag.putLongArray("sineAmp", sineLayerAmplitudes.map(java.lang.Double.doubleToRawLongBits).toArray)
+    tag.putLongArray("sineOff", sineLayerOffset.map(java.lang.Double.doubleToRawLongBits).toArray)
+
+  def readNbt(tag: CompoundTag): Unit =
+    progress = tag.getInt("progress")
+    lastBlockPos = BlockPos.of(tag.getLong("lastBlockPos"))
+    sineLayerAmplitudes = tag.getLongArray("sineAmp").toIndexedSeq.map(java.lang.Double.longBitsToDouble)
+    sineLayerOffset = tag.getLongArray("sineOff").toIndexedSeq.map(java.lang.Double.longBitsToDouble)
