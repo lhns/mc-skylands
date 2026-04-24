@@ -11,17 +11,24 @@ import skylands.registry.{SkylandsBlocks, SkylandsWorldgen}
 
 // Deterministic per-layer beanstalk generator.
 //
-// The stalk is treated as a 1-D curve indexed by a signed layer offset `p`
-// from the bean's Y. `stalkCenter(p)` gives the spine position at layer p,
-// `thickness(distFromTip)` gives the disk radius a layer of a given age
-// should have, and `drawDisk` paints that disk.
+// The stalk's XZ offset at layer p is the sum of two pieces:
+//   sineWobble(p)   — a smooth 7-octave sine curve evaluated directly
+//                     (position-space, anchored at p=0). Sets the big
+//                     S-shape the trunk follows.
+//   Σ_{k=1..p} jitterStep(k)  — cumulative per-layer ±1/0 jitter from a
+//                     high-frequency noise. Bounded drunken-walk that
+//                     roughens the trunk's surface on top of the smooth
+//                     shape. Matches the 1.12.2 feel of per-tick unit-
+//                     step perturbations.
 //
-// Each update advances `progress` by one (new tip), extends the root tip
-// by one (new root layer) up to `rootDepth`, and re-sweeps every
-// still-existing layer redrawing its disk at the thickness its age demands.
-// Thickness grows over time because `distFromTip(p) = progress - |p|`
-// increases with progress for any fixed p. Roots sit at negative `p` and
-// ride the same sine wobble as the trunk.
+// The sine wobble is evaluated once per layer (not derivative-then-
+// reintegrated); only the jitter needs accumulating. `update()`
+// advances `progress` by one, then re-sweeps every layer from
+// `-rootDepth` up to `progress`, keeping a running jitter total so the
+// whole sweep is O(progress). Thickness grows over time because
+// `distFromTip(p) = progress - |p|` increases for any fixed p, so the
+// same layer's disk fattens each tick. Roots sit at negative `p` and
+// use a separate jitter accumulator going downward.
 //
 // State is `{progress, seed}`, both passed in as constructor parameters:
 // cold start rolls a fresh `seed` from `level.getRandom`; load constructs
@@ -49,6 +56,25 @@ class BeanstalkGenerator(
   // is available.
   private val seamY: Int = level.getMaxBuildHeight - 1
 
+  // The trunk keeps extending past `seamY` by this many blocks. Those
+  // writes fall out of overworld build-range (they noop on the bottom
+  // level via BlockArray.forLevel's bounds check) and only land in
+  // Skylands via `syncVertical`'s offset `dy = overlap − seamY`. Result:
+  // a ladder inside Skylands from the overlap mirror (skylands y=0..15)
+  // all the way up to near the island terrain top, so a player that
+  // teleported in via a seam-band cloud has something solid to climb
+  // instead of free-falling through void.
+  //
+  // Sized to land the skylands-side trunk top just below
+  // `SkylandsChunkGenerator.TerrainTopY`:
+  //   skylands-Y top  = overworld-Y cap − (seamY − overlap)
+  //   TerrainTopY − 1 = seamY + overshoot − seamY + overlap
+  //   overshoot       = TerrainTopY − 1 − overlap
+  private val trunkOvershootIntoSkylands: Int =
+    SkylandsChunkGenerator.TerrainTopY - 1 - SkylandsOverlap
+
+  private val hardCapY: Int = seamY + trunkOvershootIntoSkylands
+
   // Mirror writes into Skylands when the dimension is available, so the
   // trunk appears continuous across the seam. If Skylands isn't loaded
   // (e.g. dedicated-server config omitted it), fall back to a single-
@@ -61,7 +87,7 @@ class BeanstalkGenerator(
   // --- Sine-wobble constants (lifted verbatim from the 1.12.2 port) --------
 
   private val octaves                 = 7
-  private val amplitudeMax            = 40.0
+  private val amplitudeMax            = 40.0    // walker target amplitude; see walkStep — walker enforces ±1/layer regardless
   private val octaveDecrease          = 1.12
   private val minSineFreqDivider      = 30.0
   private val sineFreqDividerDecrease = 0.66
@@ -69,13 +95,9 @@ class BeanstalkGenerator(
   private val rootDepth       = 5
   private val cloudBandHeight = 10
 
-  // High-frequency sine used for the per-layer jitter. `jitterFreq`
-  // controls how much the jitter shifts between adjacent layers (radians
-  // per layer). `jitterAmplitude` scales the resulting XZ offset before
-  // rounding to an int — small enough that consecutive shell disks still
-  // overlap so the trunk stays continuous.
-  private val jitterFreq      = 2.0
-  private val jitterAmplitude = 1.2
+  // High-frequency sine whose sign gives the per-layer ±1/0 jitter step.
+  // jitterFreq > π gives a fresh sign decision each layer (approximately).
+  private val jitterFreq = 2.0
 
   // All per-beanstalk randomness comes out of this one RandomSource,
   // drawn in a fixed order at construction: 7 main-wobble amplitudes,
@@ -102,34 +124,41 @@ class BeanstalkGenerator(
 
   // --- Core functions ------------------------------------------------------
 
-  // Signed layer index → world position. p = 0 is the bean's own Y
-  // (anchored to `position` exactly — see the -sin(offset_i) / -cos(offset_i)
-  // baseline subtractions, which zero the wobble sum at p=0 without
-  // flattening the shape elsewhere). p < 0 walks down into the roots,
-  // p > 0 climbs the trunk. Per-layer XZ jitter is added on top,
-  // deterministically keyed on (seed, p) so reloads land the same positions.
-  private def stalkCenter(p: Int): BlockPos =
+  // Smooth 7-octave sine curve, evaluated directly as the walker's
+  // target offset at layer p. Anchored at p=0 by subtracting each
+  // octave's value at zero — `sineWobble(0) == (0, 0)` so the stalk's
+  // spine passes through the bean. Walker chases this; amplitude sets
+  // how far the walker drifts, not how much it moves per layer.
+  private def sineWobble(p: Int): (Int, Int) =
     var dx = 0.0
     var dz = 0.0
     var i  = 0
     while i < octaves do
-      val d = minSineFreqDivider - math.pow(sineFreqDividerDecrease, i)
-      dx += (math.sin(p.toDouble / d + offsets(i)) - math.sin(offsets(i))) * amps(i)
-      dz += (math.cos(p.toDouble / d + offsets(i)) - math.cos(offsets(i))) * amps(i)
+      val d   = minSineFreqDivider - math.pow(sineFreqDividerDecrease, i)
+      val arg = p.toDouble / d + offsets(i)
+      dx += (math.sin(arg) - math.sin(offsets(i))) * amps(i)
+      dz += (math.cos(arg) - math.cos(offsets(i))) * amps(i)
       i += 1
-    val (jx, jz) = layerJitter(p)
-    position.offset(dx.toInt + jx, p, dz.toInt + jz)
+    (dx.toInt, dz.toInt)
 
-  // High-frequency sine-noise XZ offset per layer — same wobble idiom
-  // as `stalkCenter`, just with different amplitude/frequency. Anchored
-  // at p=0 via baseline subtraction so no special-case needed for the
-  // bean's layer.
-  private def layerJitter(p: Int): (Int, Int) =
-    val phaseX = jitterPhases(0)
-    val phaseZ = jitterPhases(1)
-    val jx = (math.sin(p * jitterFreq + phaseX) - math.sin(phaseX)) * jitterAmplitude
-    val jz = (math.sin(p * jitterFreq + phaseZ) - math.sin(phaseZ)) * jitterAmplitude
-    (jx.round.toInt, jz.round.toInt)
+  // Per-layer ±1/0 jitter, independent per axis. Sign of a high-frequency
+  // sine; different phase per axis. Used by `walkStep` to perturb the
+  // direction of the next unit step.
+  private def jitterStep(p: Int): (Int, Int) =
+    (math.signum(math.sin(p * jitterFreq + jitterPhases(0))).toInt,
+     math.signum(math.sin(p * jitterFreq + jitterPhases(1))).toInt)
+
+  // One step of the walker. Moves ±1/0 per axis toward the sine target,
+  // perturbed by jitter. The `sign(target - current + jitter)` form
+  // matches 1.12.2's `direction = destination - lastBlockPos; step =
+  // round(normalize(direction + jitter))`. Each axis of the output is
+  // in {-1, 0, +1} — consecutive CENTERs are always edge- or face-
+  // adjacent.
+  private def walkStep(p: Int, cx: Int, cz: Int): (Int, Int) =
+    val (tx, tz) = sineWobble(p)
+    val (jx, jz) = jitterStep(p)
+    (math.signum(tx - cx + jx).toInt,
+     math.signum(tz - cz + jz).toInt)
 
   // Number of ticks between this layer's birth and the current tick.
   // `|p|` works as birth-tick because we extend both tips by one per
@@ -156,52 +185,72 @@ class BeanstalkGenerator(
         || s.is(BlockTags.BASE_STONE_OVERWORLD)
         || s.is(SkylandsBlocks.CLOUD.get())
 
-  // One idempotent disk. Cells that fail `canOverwrite` are skipped; the
-  // next update re-attempts the same layer at the same center, so a
-  // transient obstruction is cosmetic rather than structural.
-  private def drawDisk(center: BlockPos, radius: Int, state: BlockState): Unit =
-    if radius <= 0 then
-      if canOverwrite(center) then syncedWorld.setBlockState(center, state)
-    else
+  // One idempotent disk. Center cell gets `core`, the rest gets `shell`.
+  // Every write is `canOverwrite`-gated, so cells we don't own (bean,
+  // player builds, existing stem) are preserved — a spine running through
+  // someone's house doesn't chew through it. Transient obstructions are
+  // cosmetic rather than structural because the next update re-attempts
+  // the same layer at the same center.
+  private def drawDisk(center: BlockPos, radius: Int, shell: BlockState, core: BlockState): Unit =
+    if canOverwrite(center) then syncedWorld.setBlockState(center, core)
+    if radius > 0 then
       val r2 = radius * radius
       var x = -radius
       while x <= radius do
         var z = -radius
         while z <= radius do
-          if x * x + z * z <= r2 then
+          if (x != 0 || z != 0) && x * x + z * z <= r2 then
             val p = center.offset(x, 0, z)
-            if canOverwrite(p) then syncedWorld.setBlockState(p, state)
+            if canOverwrite(p) then syncedWorld.setBlockState(p, shell)
           z += 1
         x += 1
 
   // --- Tick ----------------------------------------------------------------
 
   override def update(): Unit =
-    // Hard cap: tip reached the top of the source dimension. Replace the
-    // bean with a plain stem block so the trunk reads as continuous at
-    // ground level and the BlockEntity stops ticking (different block =
-    // no more serverTick).
-    if stalkCenter(progress).getY > seamY then
-      level.setBlock(position, shellState, 3)
+    // Hard cap. Y is deterministic (tip at position.y + progress). The
+    // cap sits above `seamY` so the trunk keeps extending into Skylands
+    // via syncVertical — see `trunkOvershootIntoSkylands` above.
+    //
+    // When the cap trips, replace the bean with a stem block so the
+    // trunk reads continuous at ground level and the BlockEntity stops
+    // ticking (different block = no more serverTick).
+    if position.getY + progress > hardCapY then
+      level.setBlock(position, centerState, 3)
       return
 
     progress += 1
-
-    // Both tips grow with progress: trunk goes up to p = progress, root
-    // goes down to p = -min(progress, rootDepth). New layers start at
-    // distFromTip = 0 (single CENTER cell) and thicken on later ticks.
-    // p = 0 is skipped so the bean itself is never boxed in by a shell
-    // disk at its own Y — the bean is the visual anchor there.
     val rootFloor = -math.min(progress, rootDepth)
-    var p = rootFloor
-    while p <= progress do
-      if p != 0 then
-        val center = stalkCenter(p)
-        drawDisk(center, thickness(distFromTip(p)), shellState)
-        if canOverwrite(center) then syncedWorld.setBlockState(center, centerState)
-      p += 1
 
-    val newTip = stalkCenter(progress)
+    // Trunk: unit-step walker chasing sineWobble. Starts at p=0 with
+    // (cx, cz) = (0, 0) — first iteration draws at `position` exactly
+    // (the bean's layer; drawDisk's canOverwrite protects the bean).
+    // Draw then step: consecutive CENTERs are always ±1/0 per axis
+    // apart (edge- or face-adjacent).
+    var cx = 0
+    var cz = 0
+    var p  = 0
+    while p <= progress do
+      drawDisk(position.offset(cx, p, cz), thickness(distFromTip(p)), shellState, centerState)
+      p += 1
+      if p <= progress then
+        val (dx, dz) = walkStep(p, cx, cz)
+        cx += dx; cz += dz
+    val trunkTipX = cx
+    val trunkTipZ = cz
+
+    // Roots: independent walker going down, chasing the same sineWobble
+    // curve on the negative side. Starts at p=-1 (p=0 is the bean,
+    // already drawn by the trunk loop).
+    cx = 0; cz = 0
+    p = -1
+    while p >= rootFloor do
+      val (dx, dz) = walkStep(p, cx, cz)
+      cx += dx; cz += dz
+      drawDisk(position.offset(cx, p, cz), thickness(distFromTip(p)), shellState, centerState)
+      p -= 1
+
+    val newTip = position.offset(trunkTipX, progress, trunkTipZ)
     if newTip.getY >= seamY - cloudBandHeight && newTip.getY <= seamY then
       new CloudGenerator(level, newTip)
 
