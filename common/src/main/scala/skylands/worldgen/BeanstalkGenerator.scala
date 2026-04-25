@@ -95,9 +95,15 @@ class BeanstalkGenerator(
   private val rootDepth       = 5
   private val cloudBandHeight = 10
 
-  // High-frequency sine whose sign gives the per-layer ±1/0 jitter step.
-  // jitterFreq > π gives a fresh sign decision each layer (approximately).
-  private val jitterFreq = 2.0
+  // High-frequency sine used as continuous direction perturbation in
+  // walkStep. `jitterAmplitude` is the magnitude per axis; tuned to be
+  // comparable to a typical `target − current` distance (~5..20 in
+  // practice with `amplitudeMax = 40`). Big enough that jitter flips
+  // step signs occasionally even when walker isn't right at the target,
+  // matching 1.12.2's `direction + rand(±15)` perturbation. Walker
+  // still emits ±1/0 per axis, so the connectivity guarantee holds.
+  private val jitterFreq      = 2.0
+  private val jitterAmplitude = 10.0
 
   // All per-beanstalk randomness comes out of this one RandomSource,
   // drawn in a fixed order at construction: 7 main-wobble amplitudes,
@@ -141,24 +147,26 @@ class BeanstalkGenerator(
       i += 1
     (dx.toInt, dz.toInt)
 
-  // Per-layer ±1/0 jitter, independent per axis. Sign of a high-frequency
-  // sine; different phase per axis. Used by `walkStep` to perturb the
-  // direction of the next unit step.
-  private def jitterStep(p: Int): (Int, Int) =
-    (math.signum(math.sin(p * jitterFreq + jitterPhases(0))).toInt,
-     math.signum(math.sin(p * jitterFreq + jitterPhases(1))).toInt)
+  // Continuous per-layer direction perturbation. Two independent
+  // high-frequency sines (one phase per axis), scaled to
+  // `jitterAmplitude`. NOT sign-quantised here — `walkStep` adds this
+  // to `target − current` before signing, so jitter magnitude can flip
+  // the step sign near the target and break up monotonic diagonal
+  // stretches. Same role as 1.12.2's `direction + rand(±15)`.
+  private def jitterStep(p: Int): (Double, Double) =
+    (math.sin(p * jitterFreq + jitterPhases(0)) * jitterAmplitude,
+     math.sin(p * jitterFreq + jitterPhases(1)) * jitterAmplitude)
 
-  // One step of the walker. Moves ±1/0 per axis toward the sine target,
-  // perturbed by jitter. The `sign(target - current + jitter)` form
-  // matches 1.12.2's `direction = destination - lastBlockPos; step =
-  // round(normalize(direction + jitter))`. Each axis of the output is
-  // in {-1, 0, +1} — consecutive CENTERs are always edge- or face-
-  // adjacent.
+  // One step of the walker. Sums target direction + continuous jitter,
+  // sign-quantises each axis to ±1/0. `sign(target − current + jitter)`
+  // matches 1.12.2 `direction = destination − lastBlockPos; step =
+  // round(normalize(direction + jitter))`. Output is in {−1, 0, +1}²
+  // per axis — consecutive CENTERs always edge- or face-adjacent.
   private def walkStep(p: Int, cx: Int, cz: Int): (Int, Int) =
     val (tx, tz) = sineWobble(p)
     val (jx, jz) = jitterStep(p)
-    (math.signum(tx - cx + jx).toInt,
-     math.signum(tz - cz + jz).toInt)
+    (math.signum((tx - cx).toDouble + jx).toInt,
+     math.signum((tz - cz).toDouble + jz).toInt)
 
   // Number of ticks between this layer's birth and the current tick.
   // `|p|` works as birth-tick because we extend both tips by one per
