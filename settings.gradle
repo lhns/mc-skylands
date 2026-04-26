@@ -1,4 +1,8 @@
 pluginManagement {
+    // Composite-build mc-lib-provider so the Gradle plugin id "io.github.mclibprovider"
+    // resolves without a publish step. mc-scala lives as a sibling checkout.
+    includeBuild('../mc-scala')
+
     repositories {
         maven { url = 'https://maven.fabricmc.net/' }
         maven { url = 'https://maven.neoforged.net/releases/' }

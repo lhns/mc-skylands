@@ -3,16 +3,10 @@
 // editing shared code. Each platform subproject inlines these sources via
 // sourceSets.main.*.srcDirs += project(':common').file(...).
 
-buildscript {
-    repositories {
-        maven { url = 'https://maven.fabricmc.net/' }
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath "net.fabricmc:fabric-loom:${rootProject.fabric_loom_version}"
-    }
-}
-
+// Plugin classpath for fabric-loom comes from the root build.gradle's plugins{}
+// block (declared with `apply false`). Subprojects re-apply via `apply plugin:`
+// so loom shares one ClassLoader across :common and :fabric — needed because
+// RemapJarTask casts a service across the two subprojects' loom instances.
 apply plugin: 'fabric-loom'
 apply plugin: 'scala'
 

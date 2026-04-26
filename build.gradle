@@ -5,8 +5,14 @@
 // The `idea` plugin is needed on the root because fabric-loom configures
 // `ideaProject` to wire up run configurations. Without it, loom errors at
 // plugin-apply time.
+// Declare plugins with `apply false` at the root so subprojects inherit a
+// SHARED plugin classloader for fabric-loom and io.github.mclibprovider.
+// Without this, loom loaded once per subproject (common, fabric) put its
+// classes on two different ClassLoaders, breaking RemapJarTask cross-cast.
 plugins {
     id 'idea'
+    id 'fabric-loom' version "${fabric_loom_version}" apply false
+    id 'io.github.mclibprovider' apply false
 }
 
 subprojects {
