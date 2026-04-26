@@ -1,5 +1,6 @@
 plugins {
     id 'net.neoforged.moddev' version "${moddevgradle_version}"
+    id 'io.github.mclibprovider'
     id 'scala'
 }
 
@@ -15,7 +16,11 @@ sourceSets {
 }
 
 repositories {
-    maven { name = 'Kotori316 Maven'; url = 'https://maven.kotori316.com' }
+    // Required for io.github.mclibprovider:neoforge:<version> — the runtime
+    // language loader is published as a shadow jar to mavenLocal by mc-scala.
+    // Workflow before any runClient / build:
+    //   ../mc-scala/gradlew :neoforge:publishToMavenLocal
+    mavenLocal()
 }
 
 neoForge {
@@ -44,29 +49,23 @@ neoForge {
 }
 
 dependencies {
-    // Scala 3 language provider. Pattern lifted from Pierre's mc-fluid-physics
-    // (neoforge-1.21.1/build.gradle) which solved the same JPMS collision we'd
-    // otherwise hit any time a user installs another Scala-backed mod (SCF's
-    // module exports scala.quoted.runtime to org.scala.lang.scala3.library and
-    // a JiJ'd scala3-library_3 owns that package — split-package, mod layer
-    // refused).
-    //   - `:with-library` classifier: scala2 + scala3 + cats merged flat into
-    //     one JPMS module (`kotori_scala`). The plain classifier is jar-in-jar
-    //     and recreates the collision.
-    //   - transitive=false: SCF's POM otherwise re-adds scala3-library_3 as a
-    //     separate jar, producing duplicate modules on the runtime classpath.
-    //   - `modLoader = "kotori_scala"` in neoforge.mods.toml enforces SCF's
-    //     presence; no `[[dependencies]]` block for SCF (it's FMLModType=LIBRARY
-    //     with no registered mod id, so a dep check against it would fail).
-    runtimeOnly("com.kotori316:scalablecatsforce-neoforge:${rootProject.scf_neoforge_version}:with-library") {
-        transitive = false
-    }
+    // mc-lib-provider NeoForge runtime adapter — replaces Scalable Cat's Force.
+    // Discovers @Mod-annotated classes the same way vanilla javafml does
+    // (ModFileScanData.getAnnotatedBy(Mod.class)) and matches FML's
+    // (IEventBus) constructor signature directly, so SkylandsNeoForge stays
+    // unchanged.
+    implementation "io.github.mclibprovider:neoforge:${rootProject.mclibprovider_version}"
 
-    // Compile against scala3-library directly; SCF provides it at runtime in
-    // both production and MDG dev runs (it's a real mod, MDG auto-promotes it
-    // to the transforming classpath — unlike a plain library that needed the
-    // `additionalRuntimeClasspath` escape hatch we used to need with jarJar).
-    compileOnly "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
+    // Scala stdlib goes through the per-mod URLClassLoader served by
+    // mc-lib-provider, not the platform classpath. mcLibImplementation is
+    // opt-in: declared here, the plugin emits these into
+    // META-INF/mclibprovider.toml and auto-subtracts anything actually
+    // platform-provided. No excludeGroup, no platform enumeration needed.
+    mcLibImplementation "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
+}
+
+mclibprovider {
+    lang.set('scala')
 }
 
 processResources {
