@@ -102,7 +102,13 @@ class BeanstalkGenerator(
   // step signs occasionally even when walker isn't right at the target,
   // matching 1.12.2's `direction + rand(±15)` perturbation. Walker
   // still emits ±1/0 per axis, so the connectivity guarantee holds.
-  private val jitterFreq      = 2.0
+  //
+  // X and Z get distinct (coprime-ish) frequencies so their sign-flips
+  // drift out of phase over the trunk's length. A shared frequency made
+  // the two axis-jitters perfectly linearly correlated, so they flipped
+  // sign in lockstep and biased the same diagonal across runs of layers.
+  private val jitterFreqX     = 2.0
+  private val jitterFreqZ     = 2.7
   private val jitterAmplitude = 10.0
 
   // All per-beanstalk randomness comes out of this one RandomSource,
@@ -147,26 +153,33 @@ class BeanstalkGenerator(
       i += 1
     (dx.toInt, dz.toInt)
 
-  // Continuous per-layer direction perturbation. Two independent
-  // high-frequency sines (one phase per axis), scaled to
+  // Continuous per-layer direction perturbation. Two high-frequency
+  // sines with distinct frequencies and per-axis phases (decorrelating
+  // X and Z so they don't flip sign in lockstep), scaled to
   // `jitterAmplitude`. NOT sign-quantised here — `walkStep` adds this
-  // to `target − current` before signing, so jitter magnitude can flip
-  // the step sign near the target and break up monotonic diagonal
+  // to `target − current` before normalising, so jitter magnitude can
+  // flip the step sign near the target and break up monotonic diagonal
   // stretches. Same role as 1.12.2's `direction + rand(±15)`.
   private def jitterStep(p: Int): (Double, Double) =
-    (math.sin(p * jitterFreq + jitterPhases(0)) * jitterAmplitude,
-     math.sin(p * jitterFreq + jitterPhases(1)) * jitterAmplitude)
+    (math.sin(p * jitterFreqX + jitterPhases(0)) * jitterAmplitude,
+     math.sin(p * jitterFreqZ + jitterPhases(1)) * jitterAmplitude)
 
   // One step of the walker. Sums target direction + continuous jitter,
-  // sign-quantises each axis to ±1/0. `sign(target − current + jitter)`
-  // matches 1.12.2 `direction = destination − lastBlockPos; step =
-  // round(normalize(direction + jitter))`. Output is in {−1, 0, +1}²
-  // per axis — consecutive CENTERs always edge- or face-adjacent.
+  // then normalises by the larger axis component (clamped at 1.0 to
+  // play the role 1.12.2's per-tick dy=3 played in its max-norm) and
+  // rounds. Output is in {−1, 0, +1}² per axis — consecutive CENTERs
+  // always edge- or face-adjacent. Critically, when one axis dominates
+  // the other its small-axis component rounds to 0, giving an axis-
+  // aligned step — that's what mixes axis-aligned and diagonal steps
+  // into a round path instead of the all-diagonal trunk that math.signum
+  // produced.
   private def walkStep(p: Int, cx: Int, cz: Int): (Int, Int) =
     val (tx, tz) = sineWobble(p)
     val (jx, jz) = jitterStep(p)
-    (math.signum((tx - cx).toDouble + jx).toInt,
-     math.signum((tz - cz).toDouble + jz).toInt)
+    val ax = (tx - cx).toDouble + jx
+    val az = (tz - cz).toDouble + jz
+    val scale = math.max(math.max(math.abs(ax), math.abs(az)), 1.0)
+    (math.round(ax / scale).toInt, math.round(az / scale).toInt)
 
   // Number of ticks between this layer's birth and the current tick.
   // `|p|` works as birth-tick because we extend both tips by one per
