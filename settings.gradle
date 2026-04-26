@@ -1,6 +1,7 @@
 pluginManagement {
-    // Composite-build mc-lib-provider so the Gradle plugin id "io.github.mclibprovider"
-    // resolves without a publish step. mc-scala lives as a sibling checkout.
+    // Composite-build mcdp (MC Dependency Provider) so the Gradle plugin id
+    // "de.lhns.mcdp" resolves without a publish step. mc-scala lives as a
+    // sibling checkout.
     includeBuild('../mc-scala')
 
     repositories {

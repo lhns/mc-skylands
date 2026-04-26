@@ -15,13 +15,13 @@
   "entrypoints": {
     "main": [
       {
-        "adapter": "mclibprovider",
+        "adapter": "mcdepprovider",
         "value": "skylands.fabric.SkylandsFabric"
       }
     ],
     "client": [
       {
-        "adapter": "mclibprovider",
+        "adapter": "mcdepprovider",
         "value": "skylands.fabric.SkylandsFabricClient"
       }
     ],
@@ -30,7 +30,7 @@
     ],
     "fabric-datagen": [
       {
-        "adapter": "mclibprovider",
+        "adapter": "mcdepprovider",
         "value": "skylands.fabric.datagen.SkylandsDataGen"
       }
     ]
@@ -40,6 +40,6 @@
     "minecraft": "~1.21.1",
     "java": ">=21",
     "fabric-api": "*",
-    "mclibprovider": "*"
+    "mcdepprovider": "*"
   }
 }

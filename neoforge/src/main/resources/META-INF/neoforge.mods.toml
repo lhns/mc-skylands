@@ -1,4 +1,4 @@
-modLoader = "mclibprovider"
+modLoader = "mcdepprovider"
 loaderVersion = "[1,)"
 license = "Apache-2.0"
 issueTrackerURL = "https://github.com/lhns/mc-skylands/issues"

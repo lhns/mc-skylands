@@ -1,10 +1,10 @@
-// Plugin classpath for fabric-loom and io.github.mclibprovider lives on the
-// root build.gradle's plugins{} block (with `apply false`). Re-applying here
-// uses the shared classloader, which avoids loom's RemapJarTask hitting
+// Plugin classpath for fabric-loom and de.lhns.mcdp lives on the root
+// build.gradle's plugins{} block (with `apply false`). Re-applying here uses
+// the shared classloader, which avoids loom's RemapJarTask hitting
 // "cannot cast BuildSharedServiceManager$Inject to BuildSharedServiceManager"
 // when :common and :fabric load loom into separate classloaders.
 apply plugin: 'fabric-loom'
-apply plugin: 'io.github.mclibprovider'
+apply plugin: 'de.lhns.mcdp'
 apply plugin: 'scala'
 
 // MultiLoader-Template: inline shared common sources directly. Both loaders
@@ -20,10 +20,10 @@ sourceSets {
 }
 
 repositories {
-    // Required for io.github.mclibprovider:fabric:<version> — the runtime
-    // language adapter is published as a shadow jar to mavenLocal by
-    // mc-scala (composite substitution doesn't work for it; see ADR-0012
-    // in mc-scala/docs/). Workflow:
+    // Required for de.lhns.mcdp:fabric:<version> — the runtime language adapter
+    // is published as a shadow jar to mavenLocal by mc-scala (composite
+    // substitution doesn't work for it; see ADR-0012 in mc-scala/docs/).
+    // Workflow:
     //   ../mc-scala/gradlew :fabric:publishToMavenLocal
     // before any runClient / build of this subproject.
     mavenLocal()
@@ -36,19 +36,19 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
 
-    // mc-lib-provider Fabric runtime adapter — replaces krysztal-language-scala.
-    // Provides the `mclibprovider` LanguageAdapter referenced in fabric.mod.json
-    // and the PreLaunchEntrypoint that wires up per-mod URLClassLoaders.
-    modImplementation "io.github.mclibprovider:fabric:${rootProject.mclibprovider_version}"
+    // mcdp Fabric runtime adapter — replaces krysztal-language-scala. Provides
+    // the `mcdepprovider` LanguageAdapter referenced in fabric.mod.json and the
+    // PreLaunchEntrypoint that wires up per-mod URLClassLoaders.
+    modImplementation "de.lhns.mcdp:mcdp-fabric:${rootProject.mcdp_version}"
 
     // Scala stdlib moves from `implementation` (compile + runtime classpath) to
-    // `mcLibImplementation` (manifest-emitted, served by mc-lib-provider's per-
-    // mod loader at runtime). Keep `compileOnly` in :common — that subproject
-    // is dev-only scaffolding and never produces a jar.
-    mcLibImplementation "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
+    // `mcdepImplementation` (manifest-emitted, served by mcdp's per-mod loader
+    // at runtime). Keep `compileOnly` in :common — that subproject is dev-only
+    // scaffolding and never produces a jar.
+    mcdepImplementation "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
 }
 
-mclibprovider {
+mcdepprovider {
     lang.set('scala')
 }
 

@@ -12,7 +12,7 @@
 plugins {
     id 'idea'
     id 'fabric-loom' version "${fabric_loom_version}" apply false
-    id 'io.github.mclibprovider' apply false
+    id 'de.lhns.mcdp' apply false
 }
 
 subprojects {

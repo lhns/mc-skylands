@@ -1,6 +1,6 @@
 plugins {
     id 'net.neoforged.moddev' version "${moddevgradle_version}"
-    id 'io.github.mclibprovider'
+    id 'de.lhns.mcdp'
     id 'scala'
 }
 
@@ -16,9 +16,9 @@ sourceSets {
 }
 
 repositories {
-    // Required for io.github.mclibprovider:neoforge:<version> — the runtime
-    // language loader is published as a shadow jar to mavenLocal by mc-scala.
-    // Workflow before any runClient / build:
+    // Required for de.lhns.mcdp:neoforge:<version> — the runtime language
+    // loader is published as a shadow jar to mavenLocal by mc-scala. Workflow
+    // before any runClient / build:
     //   ../mc-scala/gradlew :neoforge:publishToMavenLocal
     mavenLocal()
 }
@@ -49,22 +49,22 @@ neoForge {
 }
 
 dependencies {
-    // mc-lib-provider NeoForge runtime adapter — replaces Scalable Cat's Force.
-    // Discovers @Mod-annotated classes the same way vanilla javafml does
+    // mcdp NeoForge runtime adapter — replaces Scalable Cat's Force. Discovers
+    // @Mod-annotated classes the same way vanilla javafml does
     // (ModFileScanData.getAnnotatedBy(Mod.class)) and matches FML's
     // (IEventBus) constructor signature directly, so SkylandsNeoForge stays
     // unchanged.
-    implementation "io.github.mclibprovider:neoforge:${rootProject.mclibprovider_version}"
+    implementation "de.lhns.mcdp:mcdp-neoforge:${rootProject.mcdp_version}"
 
-    // Scala stdlib goes through the per-mod URLClassLoader served by
-    // mc-lib-provider, not the platform classpath. mcLibImplementation is
-    // opt-in: declared here, the plugin emits these into
-    // META-INF/mclibprovider.toml and auto-subtracts anything actually
-    // platform-provided. No excludeGroup, no platform enumeration needed.
-    mcLibImplementation "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
+    // Scala stdlib goes through the per-mod URLClassLoader served by mcdp, not
+    // the platform classpath. mcdepImplementation is opt-in: declared here,
+    // the plugin emits these into META-INF/mcdepprovider.toml and auto-
+    // subtracts anything actually platform-provided. No excludeGroup, no
+    // platform enumeration needed.
+    mcdepImplementation "org.scala-lang:scala3-library_3:${rootProject.scala_version}"
 }
 
-mclibprovider {
+mcdepprovider {
     lang.set('scala')
 }
 
