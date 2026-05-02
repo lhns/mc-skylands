@@ -15,14 +15,6 @@ sourceSets {
     }
 }
 
-repositories {
-    // Required for de.lhns.mcdp:neoforge:<version> — the runtime language
-    // loader is published as a shadow jar to mavenLocal by mc-scala. Workflow
-    // before any runClient / build:
-    //   ../mc-scala/gradlew :neoforge:publishToMavenLocal
-    mavenLocal()
-}
-
 neoForge {
     version = rootProject.neoforge_version
 
@@ -49,12 +41,13 @@ neoForge {
 }
 
 dependencies {
-    // mcdp NeoForge runtime adapter — replaces Scalable Cat's Force. Discovers
-    // @Mod-annotated classes the same way vanilla javafml does
-    // (ModFileScanData.getAnnotatedBy(Mod.class)) and matches FML's
-    // (IEventBus) constructor signature directly, so SkylandsNeoForge stays
-    // unchanged.
-    implementation "de.lhns.mcdp:mcdp-neoforge:${rootProject.mcdp_version}"
+    // mcdp unified runtime adapter (mc-scala ADR-0016) — one jar bundles both
+    // the Fabric and NeoForge adapters, published to Maven Central. Replaces
+    // Scalable Cat's Force. Discovers @Mod-annotated classes the same way
+    // vanilla javafml does (ModFileScanData.getAnnotatedBy(Mod.class)); FML's
+    // bag-based ctor dispatch (ADR-0017) matches SkylandsNeoForge's
+    // (IEventBus) signature unchanged.
+    implementation "de.lhns.mcdp:mcdp:${rootProject.mcdp_version}"
 
     // Scala stdlib goes through the per-mod URLClassLoader served by mcdp, not
     // the platform classpath. mcdepImplementation is opt-in: declared here,

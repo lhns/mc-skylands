@@ -1,13 +1,19 @@
 pluginManagement {
-    // Composite-build mcdp (MC Dependency Provider) so the Gradle plugin id
-    // "de.lhns.mcdp" resolves without a publish step. mc-scala lives as a
-    // sibling checkout.
-    includeBuild('../mc-scala')
-
     repositories {
         maven { url = 'https://maven.fabricmc.net/' }
         maven { url = 'https://maven.neoforged.net/releases/' }
+        // mcdp's Gradle plugin (`de.lhns.mcdp`) is published to Maven Central,
+        // not the Gradle Plugin Portal.
+        mavenCentral()
         gradlePluginPortal()
+    }
+
+    // Pin de.lhns.mcdp here so the root build.gradle plugins{} block can
+    // reference it as bare `id 'de.lhns.mcdp'` — Gradle's plugins{} doesn't
+    // accept ${...} interpolation in version strings, but pluginManagement
+    // resolves the property fine.
+    plugins {
+        id 'de.lhns.mcdp' version "${mcdp_version}"
     }
 }
 

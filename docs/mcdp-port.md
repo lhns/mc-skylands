@@ -1,8 +1,8 @@
 # mcdp port
 
 How the `mcdp-1.21.1` branch replaced the per-loader Scala language providers
-with a single one — [mcdp](https://gitea.lhns.de/lhns/mcdp), the *MC
-Dependency Provider* — across Fabric and NeoForge.
+with a single one — [mcdp](https://github.com/lhns/mc-dependency-provider),
+the *MC Dependency Provider* — across Fabric and NeoForge.
 
 ## Why
 
@@ -31,30 +31,28 @@ dependency-loading bugs to debug, not two.
 
 ## Build wiring
 
-mcdp lives at `C:/Users/pierr/Documents/git/mc-scala` (sibling checkout).
-The skylands build pulls it in via composite include:
+mcdp is consumed as a published artifact from **Maven Central** —
+`de.lhns.mcdp:mcdp:0.1.1` (mc-scala ADR-0016: a single unified jar
+that bundles both the Fabric and NeoForge adapters). The Gradle
+plugin id `de.lhns.mcdp` is also on Maven Central.
 
-- **`settings.gradle`** — `pluginManagement { includeBuild('../mc-scala') }`
-  so the Gradle plugin id `de.lhns.mcdp` resolves without a publish.
-- **`build.gradle` (root)** — declares `id 'fabric-loom' apply false` and
-  `id 'de.lhns.mcdp' apply false` in the root `plugins {}` block so all
-  subprojects share *one* plugin classloader. Without this, common and
-  fabric each loaded their own copy of fabric-loom; loom's
-  `BuildSharedServiceManager` then failed cross-classloader casts inside
-  `RemapJarTask`. Subprojects re-`apply plugin: …`.
-- **`fabric/build.gradle` & `neoforge/build.gradle`** — `mavenLocal()` is
-  added to the per-subproject repositories. The plugin is composite-built,
-  but the *runtime* artifacts (`de.lhns.mcdp:mcdp-fabric`,
-  `de.lhns.mcdp:mcdp-neoforge`) are shadow jars and have to be published
-  to mavenLocal explicitly. Workflow before any rebuild:
-
-  ```
-  ../mc-scala/gradlew :fabric:publishToMavenLocal :neoforge:publishToMavenLocal
-  ```
-
-  (mc-scala's ADR-0012 explains why composite substitution can't replace
-  the shadow jar — Fabric's `ClasspathModCandidateFinder` rejects the
-  per-subproject classes-dir output.)
+- **`settings.gradle`** — `pluginManagement.repositories` includes
+  `mavenCentral()`, and `pluginManagement.plugins` pins
+  `id 'de.lhns.mcdp' version "${mcdp_version}"`. Centralising the
+  version there is necessary because Gradle's `plugins {}` block
+  doesn't accept `${...}` interpolation in version strings, but
+  `pluginManagement.plugins` does.
+- **`build.gradle` (root)** — declares `id 'fabric-loom' apply false`
+  and `id 'de.lhns.mcdp' apply false` in the root `plugins {}` block
+  so all subprojects share *one* plugin classloader. Without this,
+  common and fabric each loaded their own copy of fabric-loom; loom's
+  `BuildSharedServiceManager` then failed cross-classloader casts
+  inside `RemapJarTask`. Subprojects re-`apply plugin: …`.
+- **`fabric/build.gradle` & `neoforge/build.gradle`** — declare a
+  single dependency on `de.lhns.mcdp:mcdp:${mcdp_version}` (the same
+  coord on both loaders). The Maven Central repo comes from the root
+  `subprojects { repositories { mavenCentral() } }` block; no
+  per-subproject repository config is needed.
 
 ## Per-loader changes
 
@@ -64,7 +62,7 @@ The skylands build pulls it in via composite include:
 - Drop the `gradle/offline-maven` repo and the `maven.krysztal.dev` entry
   (the offline jar still exists under `gradle/offline-maven/dev/krysztal/`
   but nothing references it; safe to delete).
-- Add `modImplementation 'de.lhns.mcdp:mcdp-fabric:0.1.0-SNAPSHOT'`.
+- Add `modImplementation 'de.lhns.mcdp:mcdp:0.1.1'`.
 - Move `org.scala-lang:scala3-library_3` from `implementation` to
   `mcdepImplementation` — that's mcdp's opt-in bucket. The Gradle plugin
   walks its transitive closure and emits each library into the
@@ -80,7 +78,7 @@ The skylands build pulls it in via composite include:
 - Drop `com.kotori316:scalablecatsforce-neoforge:*:with-library` and the
   `kotori_scala` modLoader.
 - Apply `id 'de.lhns.mcdp'` alongside `net.neoforged.moddev`.
-- Add `implementation 'de.lhns.mcdp:mcdp-neoforge:0.1.0-SNAPSHOT'`.
+- Add `implementation 'de.lhns.mcdp:mcdp:0.1.1'`.
 - Move `scala3-library_3` from `compileOnly` to `mcdepImplementation`
   (no `excludeGroup` / platform-enumeration bookkeeping needed — the
   plugin auto-subtracts anything actually platform-provided).
@@ -107,12 +105,10 @@ via NeoForge's own `AutomaticEventSubscriber.inject` — no special case.
 ## Runtime contract
 
 mcdp is a separate mod, not bundled into skylands. Drop **both** jars
-into `mods/`:
+into `mods/` — the same `mcdp-0.1.1.jar` works for either loader:
 
-- Fabric: `skylands-fabric-…jar` + `mcdp-fabric-0.1.0-SNAPSHOT.jar`
-  (built from mc-scala via `:fabric:shadowJar`).
-- NeoForge: `skylands-neoforge-…jar` + `mcdp-neoforge-0.1.0-SNAPSHOT.jar`
-  (built from mc-scala via `:neoforge:shadowJar`).
+- Fabric: `skylands-fabric-…jar` + `mcdp-0.1.1.jar`.
+- NeoForge: `skylands-neoforge-…jar` + `mcdp-0.1.1.jar`.
 
 On first launch, mcdp downloads `scala3-library_3` and `scala-library`
 from Maven Central into `~/.cache/mc-lib-provider/libs/<sha>.jar`. Net
@@ -134,7 +130,7 @@ fabric/src/main/resources/fabric.mod.json        adapter + depends
 gradle.properties                                mcdp_version
 neoforge/build.gradle                            mcdp + mcdepImplementation
 neoforge/src/main/resources/META-INF/neoforge.mods.toml   modLoader
-settings.gradle                                  includeBuild('../mc-scala')
+settings.gradle                                  pluginManagement (mavenCentral + plugin pin)
 docs/mcdp-port.md                                this file
 ```
 
@@ -143,5 +139,3 @@ docs/mcdp-port.md                                this file
 - Deleting the vendored `gradle/offline-maven/dev/krysztal/` jar +
   POM. Worth a follow-up cleanup once nothing on any active branch
   references them.
-- A non-snapshot mcdp release. v0.1.0 is not on Maven Central yet;
-  composite + mavenLocal is the only resolution path.

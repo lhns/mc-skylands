@@ -19,16 +19,6 @@ sourceSets {
     }
 }
 
-repositories {
-    // Required for de.lhns.mcdp:fabric:<version> — the runtime language adapter
-    // is published as a shadow jar to mavenLocal by mc-scala (composite
-    // substitution doesn't work for it; see ADR-0012 in mc-scala/docs/).
-    // Workflow:
-    //   ../mc-scala/gradlew :fabric:publishToMavenLocal
-    // before any runClient / build of this subproject.
-    mavenLocal()
-}
-
 dependencies {
     minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
     mappings loom.officialMojangMappings()
@@ -36,10 +26,12 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
 
-    // mcdp Fabric runtime adapter — replaces krysztal-language-scala. Provides
-    // the `mcdepprovider` LanguageAdapter referenced in fabric.mod.json and the
-    // PreLaunchEntrypoint that wires up per-mod URLClassLoaders.
-    modImplementation "de.lhns.mcdp:mcdp-fabric:${rootProject.mcdp_version}"
+    // mcdp unified runtime adapter (mc-scala ADR-0016) — one jar bundles both
+    // the Fabric and NeoForge adapters, published to Maven Central. Replaces
+    // krysztal-language-scala. Provides the `mcdepprovider` LanguageAdapter
+    // referenced in fabric.mod.json and the PreLaunchEntrypoint that wires up
+    // per-mod URLClassLoaders.
+    modImplementation "de.lhns.mcdp:mcdp:${rootProject.mcdp_version}"
 
     // Scala stdlib moves from `implementation` (compile + runtime classpath) to
     // `mcdepImplementation` (manifest-emitted, served by mcdp's per-mod loader
