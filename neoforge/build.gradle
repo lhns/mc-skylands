@@ -47,7 +47,7 @@ dependencies {
     // vanilla javafml does (ModFileScanData.getAnnotatedBy(Mod.class)); FML's
     // bag-based ctor dispatch (ADR-0017) matches SkylandsNeoForge's
     // (IEventBus) signature unchanged.
-    implementation "de.lhns.mcdp:mcdp:${rootProject.mcdp_version}"
+    implementation "de.lhns.mcdp:mcdp-1.21:${rootProject.mcdp_version}"
 
     // Scala stdlib goes through the per-mod URLClassLoader served by mcdp, not
     // the platform classpath. mcdepImplementation is opt-in: declared here,

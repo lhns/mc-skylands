@@ -29,6 +29,10 @@ subprojects {
     group = rootProject.maven_group
 
     repositories {
+        // mavenLocal FIRST: this branch tests a locally published mcdp build. Listed after
+        // the remote repos it loses resolution and silently builds against the last
+        // published snapshot instead of the tree under test.
+        mavenLocal()
         maven { url = 'https://maven.fabricmc.net/' }
         maven { url = 'https://maven.neoforged.net/releases/' }
         mavenCentral()

@@ -31,7 +31,7 @@ dependencies {
     // krysztal-language-scala. Provides the `mcdepprovider` LanguageAdapter
     // referenced in fabric.mod.json and the PreLaunchEntrypoint that wires up
     // per-mod URLClassLoaders.
-    modImplementation "de.lhns.mcdp:mcdp:${rootProject.mcdp_version}"
+    modImplementation "de.lhns.mcdp:mcdp-1.21:${rootProject.mcdp_version}"
 
     // Scala stdlib moves from `implementation` (compile + runtime classpath) to
     // `mcdepImplementation` (manifest-emitted, served by mcdp's per-mod loader
